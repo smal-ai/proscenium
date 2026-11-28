@@ -6,18 +6,19 @@ from typing import Any
 
 from proscenium.api.errors import DomainError
 from proscenium.contracts import validate
-from proscenium.services import Services
 from proscenium.sources.common import managed, relative, sha
-from proscenium.sources.resolver import Resolver, closure_digest
+from proscenium.sources.resolver import Resolver, SourceReaderServices, closure_digest
 
 
 def read_closure_files(
-    services: Services,
+    services: SourceReaderServices,
     project_id: str,
     closure: dict[str, Any],
     *,
     batch: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, bytes]:
+    if "included_sources" in closure:
+        return Resolver(services).verify_composed(project_id, closure, batch=batch)[1]
     validate("SourceClosure", closure)
     if closure_digest(closure) != closure["digest"]:
         raise DomainError("hash_mismatch", 422)
@@ -30,11 +31,11 @@ def read_closure_files(
             )
             if dependency is None:
                 raise DomainError("dependency_missing", 422)
-            if dependency["project_id"] != project_id:
+            if not isinstance(dependency, dict) or dependency.get("project_id") != project_id:
                 raise DomainError("scope_denied", 403)
             if (
-                dependency["item_id"] != ref["item_id"]
-                or dependency["version_id"] != ref["version_id"]
+                dependency.get("item_id") != ref["item_id"]
+                or dependency.get("version_id") != ref["version_id"]
             ):
                 raise DomainError("source_conflict", 409)
         retained = {
@@ -53,9 +54,7 @@ def read_closure_files(
         relative(root, name)
         if name.split("/")[0] == ".receipt.json":
             raise DomainError("scope_denied", 403)
-        if name in names or any(
-            name.startswith(other + "/") or other.startswith(name + "/") for other in names
-        ):
+        if any(name.startswith(other + "/") or other.startswith(name + "/") for other in names):
             raise DomainError("dependency_collision", 409)
         names.add(name)
     if closure["entry_path"] not in names:
@@ -75,12 +74,15 @@ def read_closure_files(
                 raise DomainError("retained_source_missing", 422) from exc
         if sha(data) != origin["sha256"]:
             raise DomainError("hash_mismatch", 422)
-        files[row["destination"]] = data
+        name = row["destination"]
+        if name in files and files[name] != data:
+            raise DomainError("dependency_collision", 409, destination=name)
+        files[name] = data
     return files
 
 
 def read_authored_json(
-    services: Services,
+    services: SourceReaderServices,
     project_id: str,
     version: dict[str, Any],
     *,
@@ -89,7 +91,16 @@ def read_authored_json(
     if version["project_id"] != project_id:
         raise DomainError("scope_denied", 403)
     closure = version["source"]
-    files = read_closure_files(services, project_id, closure, batch=batch)
+    if "included_sources" in closure:
+        _, files = Resolver(services).verify_composed(
+            project_id,
+            closure,
+            batch=batch,
+            entry_only=True,
+            source_commit=version.get("source_commit"),
+        )
+    else:
+        files = read_closure_files(services, project_id, closure, batch=batch)
     try:
         document = json.loads(files[closure["entry_path"]])
         if not isinstance(document, dict):

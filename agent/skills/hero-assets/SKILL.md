@@ -75,7 +75,10 @@ heroes in Blender with `mpfb2` or source existing humanoids with `mixamo`.
    host binds the creation intent/task, not a storyboard item. After verifying the
    result, publish `kind: "asset"` with the concept artefact ID in
    `PublishedItem.artifact_ids`. Existing storyboard and scene versions stay
-   pinned until explicit adoption.
+   pinned until explicit adoption. `character`, `motion` and `wardrobe` are optional
+   searchable asset tags, not item kinds. Pin a published hero asset for an
+   individual shot with `Shot.planned_assets` in a later storyboard revision
+   without mutating earlier boards.
 4. On `comfy-image-1`, pass 1–4 distinct `reference_artifact_ids` in deliberate order.
    Name what `image 1`, `image 2`, etc. contribute in the prompt. For example,
    use `image 1` for the sketch silhouette and `image 2` for shot lighting, patina

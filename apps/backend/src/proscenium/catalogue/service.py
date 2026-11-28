@@ -17,9 +17,11 @@ from proscenium.previews.journal import (
 from proscenium.services import Services
 from proscenium.sources import Sources
 from proscenium.sources.common import active, admitted, binding, fingerprint, git, replay
+from proscenium.sources.composition import verify_included_sources
 
 from . import validation
 from .artifacts import Artifacts
+from .relationship_projector import apply_version_projection, project_version_relationships
 
 METADATA = ("description", "tags", "provenance")
 CHECKPOINT_SOURCE_CONFLICT = "Checkpoint receipt is unavailable or does not match source_commit"
@@ -223,6 +225,28 @@ class Catalogue:
                 message="Publication must use unique item_id and version_id values",
                 safe_for_model=True,
             )
+        project_id = body["project_id"]
+        if any("included_sources" in row["source"] for row in items):
+            record = self.services.registry.get(project_id)
+
+            def lookup(ref: dict) -> dict | None:
+                version = batch.get(ref["version_id"])
+                return (
+                    {**version, "project_id": project_id}
+                    if version is not None
+                    else tx.get("versions", ref["version_id"], required=False)
+                )
+
+            for row in items:
+                if "included_sources" in row["source"]:
+                    verify_included_sources(
+                        row["source"],
+                        lookup,
+                        project_id,
+                        record["repository_id"],
+                        consuming_version={key: row[key] for key in ("item_id", "version_id")},
+                        source_commit=row["source_commit"],
+                    )
         visiting: set[str] = set()
         visited: set[str] = set()
 
@@ -336,15 +360,9 @@ class Catalogue:
         batch = {row["version_id"]: row for row in body["items"]}
         for row in body["items"]:
             document = documents.get(row["version_id"])
-            required_refs: list[dict[str, Any]] = []
             if row["kind"] == "storyboard":
                 assert document is not None
-                validation.shot_plan(tx, document, batch)
-                required_refs = document["asset_dependencies"] + [
-                    shot["scene_version"]
-                    for shot in document["shots"]
-                    if shot["scene_version"] is not None
-                ]
+                validation.shot_plan(tx, document, batch, version=row)
                 identities = document["brief_artifact_ids"] + [
                     frame["artifact_id"]
                     for shot in document["shots"]
@@ -358,31 +376,13 @@ class Catalogue:
             elif row["kind"] == "sequence":
                 assert document is not None
                 validation.sequence_map(tx, document, row["version_id"], maps)
-                ids = {
-                    entry["version_id"] for entry in document["entries"] if "version_id" in entry
-                }
-                ids.update(
-                    source["version_id"]
-                    for entry in document["entries"]
-                    for source in entry.get("contributors", [])
-                )
-                required_refs = [
-                    {"item_id": tx.require("versions", identity)["item_id"], "version_id": identity}
-                    for identity in ids
-                ]
+                validation.sequence_dependencies(tx, document, row)
             elif row["kind"] == "unity_result":
                 paths = {file["destination"] for file in row["source"]["files"]}
                 if row["unity"]["scene_path"] not in paths or (
                     "player_script" in row["unity"] and row["unity"]["player_script"] not in paths
                 ):
                     raise DomainError("dependency_missing", 422)
-            if any(reference not in row["source"]["dependencies"] for reference in required_refs):
-                raise DomainError(
-                    "dependency_missing",
-                    422,
-                    "Authored version references must be pinned in the source closure",
-                    safe_for_model=True,
-                )
 
     def publish(self, caller: Caller, body: dict[str, Any]) -> tuple[dict[str, Any], bool]:
         validate("PublicationSubmit", body)
@@ -409,7 +409,10 @@ class Catalogue:
                 row["source_commit"] + "^{commit}",
             )
             materialised = self.sources.resolve(
-                project_id, row["source"], batch={r["version_id"]: r for r in body["items"]}
+                project_id,
+                row["source"],
+                batch={r["version_id"]: {**r, "project_id": project_id} for r in body["items"]},
+                source_commit=row["source_commit"],
             )
             if row["kind"] in {"storyboard", "sequence"}:
                 try:
@@ -460,19 +463,7 @@ class Catalogue:
                         self.artifacts.ready_path(project_id, identity)
                 if row["kind"] == "sequence":
                     maps.update(self.frame_maps(project_id, document))
-            entry = [
-                f for f in row["source"]["files"] if f["destination"] == row["source"]["entry_path"]
-            ]
-            if not entry or (
-                entry[0]["origin"]["kind"] == "git"
-                and entry[0]["origin"]["commit"] != row["source_commit"]
-            ):
-                raise DomainError(
-                    "source_conflict",
-                    409,
-                    "Source closure must contain its entry_path, pinned to source_commit for a Git entry",
-                    safe_for_model=True,
-                )
+            validation.publication_entry(row)
             for identity in row["artifact_ids"]:
                 self.artifacts.ready_path(project_id, identity)
         with store.transaction() as tx:
@@ -537,6 +528,12 @@ class Catalogue:
                         actor={"kind": "tool", "id": caller.subject_id},
                     )
                     tx.put("versions", row["version_id"], version, schema="VersionRecord")
+                    apply_version_projection(
+                        tx,
+                        project_version_relationships(
+                            version, documents.get(row["version_id"]), inclusions_verified=True
+                        ),
+                    )
                     old = tx.get("items", row["item_id"], required=False)
                     revision = tx.revision("items", row["item_id"]) if old else None
                     item = dict(
@@ -612,7 +609,7 @@ class Catalogue:
         if result["project_id"] != project_id:
             raise DomainError("scope_denied", 403)
         with self.services.registry.project_store(project_id).transaction(write=False) as tx:
-            validation.shot_plan(tx, result, {})
+            validation.shot_plan(tx, result, {}, version=version)
             selections = self.selections_by_slot(tx)
             for shot in result["shots"]:
                 for frame in shot["frames"]:

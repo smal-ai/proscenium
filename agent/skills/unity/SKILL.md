@@ -39,7 +39,9 @@ description: Create a minimal playable Unity scene from an explicitly pinned Ble
   job admission. Use ordinary scoped shell authoring or inspection, never a
   checkout helper, separate Blender export or shell/CLI batch launch to bypass
   the durable workflow. The host resolves the pinned Blender closure and exports
-  evaluated meshes in metres, converts Blender XYZ to Unity XZY and corrects
+  evaluated meshes only. `include_sources` and `character` / `motion` tags imply
+  no Humanoid Avatar, skinning, animation transfer or Action switching. The host
+  exports in metres, converts Blender XYZ to Unity XZY and corrects
   winding. Non-finite geometry or missing/ambiguous persistent object or instance
   IDs are failures. Do not guess IDs from names.
 - The project-scoped preparer supplies runtime and Editor scripts. Existing local

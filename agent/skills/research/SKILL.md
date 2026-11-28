@@ -53,6 +53,11 @@ skill when the optional `mixamo` CLI is installed.
    **imported** (observed application import) and **validated** (named checks with
    evidence). A thumbnail is not an acquired model. Import success is not visual,
    deformation or motion validation. Owner selection is a separate owner record.
+   Distinguish original motion-only FBX, retargeted Blender Action, runtime-linked
+   library (`include_sources`) and rendered video. A baked Action does not need
+   the raw FBX at render time. Preserve exact source/character and motion UUIDs,
+   rig/rest pose, fps, frame range, loop and root-motion choice where known, plus
+   upload approval and attribution. `character` and `motion` tags are not validation.
 6. Follow [acquisition.md](acquisition.md). Record known `Provenance` fields exactly:
    `source_url`, `creator`, `licence`. Unknown values are JSON null. Missing or
    restrictive rights do not block download, import, local use, checkpoint or

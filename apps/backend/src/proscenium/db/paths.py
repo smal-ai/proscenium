@@ -21,6 +21,22 @@ DENIED_PARTS = {
 MANAGED_ROOTS = {"artefacts", "retained", "snapshots", "jobs", "tool-output"}
 
 
+def permit_project_parts(parts: tuple[str, ...], *, managed: bool = False) -> None:
+    if ".proscenium" in parts:
+        index = parts.index(".proscenium")
+        if not managed or len(parts) <= index + 1 or parts[index + 1] not in MANAGED_ROOTS:
+            raise DomainError("scope_denied", 403)
+    for part in parts:
+        lower = part.lower()
+        if (
+            lower in DENIED_PARTS
+            or lower.startswith(".env")
+            or lower.endswith((".pem", ".key"))
+            or (lower == ".proscenium" and not managed)
+        ):
+            raise DomainError("scope_denied", 403)
+
+
 def project_path(
     root: Path,
     relative: str,
@@ -48,19 +64,7 @@ def project_path(
     except (ValueError, OSError, RuntimeError) as exc:
         raise DomainError("scope_denied", 403) from exc
     for parts in (path.parts, actual.parts):
-        if ".proscenium" in parts:
-            index = parts.index(".proscenium")
-            if not managed or len(parts) <= index + 1 or parts[index + 1] not in MANAGED_ROOTS:
-                raise DomainError("scope_denied", 403)
-        for part in parts:
-            lower = part.lower()
-            if (
-                lower in DENIED_PARTS
-                or lower.startswith(".env")
-                or lower.endswith((".pem", ".key"))
-                or (lower == ".proscenium" and not managed)
-            ):
-                raise DomainError("scope_denied", 403)
+        permit_project_parts(parts, managed=managed)
     if must_exist and (resolved.is_dir() != directory):
         raise DomainError("invalid_request", message="Unexpected file/directory kind")
     return resolved

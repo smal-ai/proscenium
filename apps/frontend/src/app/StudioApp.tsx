@@ -6,7 +6,7 @@ import { currentRetainedPreview, RetainedReview, ReviewEmpty } from "../features
 import { useArtifactObservations } from "../features/readyArtifactIndex";
 import { typingTarget } from "../features/review/media";
 import { readDrafts } from "../features/review/outbox";
-import type { ComposerSeedIntent, ContextPreparer, ReviewSurfaceProps, StudioComponents, TurnSelection } from "../api/studio";
+import type { ComposerSeedIntent, ContextPreparer, ReviewSurfaceProps, StoryboardSurfaceProps, StudioComponents, TurnSelection } from "../api/studio";
 import { emptySelection } from "../api/studio";
 import { ProjectMenu } from "../features/projects/ProjectMenu";
 import { CatalogueFallback } from "../features/projects/CatalogueFallback";
@@ -69,6 +69,11 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
   const assistantMax = Math.max(ASSISTANT_MIN_WIDTH, Math.min(ASSISTANT_MAX_WIDTH, bodyWidth - navigatorWidth - 320 - 12));
   const assistantWidth = layout.assistantCollapsed ? 52 : Math.min(layout.assistantWidth, assistantMax);
   const [leftTab, setLeftTab] = useState<"Shots" | "Outliner" | "Assets">("Assets");
+  const [shotTarget, setShotTarget] = useState<StoryboardSurfaceProps["externalTarget"]>();
+  function chooseNavigatorTab(tab: typeof leftTab) {
+    setLeftTab(tab);
+    if (tab !== "Shots") setShotTarget(undefined);
+  }
   const [rightTab, setRightTab] = useState<"Copilot" | "Critic">("Copilot");
   const [version, setVersion] = useState<VersionRecord | null>(() => projectId ? readPrivate(`view.version.${projectId}`) : null);
   const versionRef = useRef(version); versionRef.current = version;
@@ -210,6 +215,11 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
     writePrivate(`view.version.${projectId}`, next);
     onContextChange(context);
   }, [cancelFirstOpen, resetPublicationStatus, setLayout, projectId, onContextChange]);
+  const onOpenShot = useCallback((board: VersionRecord, shotId: string) => {
+    onSelect(board);
+    setShotTarget({ versionId: board.version_id, shotId, nonce: id() });
+    setLeftTab("Shots");
+  }, [onSelect]);
   const onInspectArtifact = useCallback((artifact: Artifact) => {
     cancelFirstOpen();
     resetPublicationStatus();
@@ -266,9 +276,14 @@ function ProjectStudio({ api, projectId, projects, configuration, onConfiguratio
     </header>
     <div ref={body} className={`studio-body${chatFocus ? " chat-focus" : ""}`} style={{ gridTemplateColumns: chatFocus ? `${navigatorWidth}px ${layout.navigatorCollapsed ? 0 : 6}px minmax(0,1fr)${layout.assistantCollapsed ? " 52px" : ""}` : `${navigatorWidth}px ${layout.navigatorCollapsed ? 0 : 6}px minmax(320px,1fr) ${layout.assistantCollapsed ? 0 : 6}px ${assistantWidth}px` }}>
       <aside className={`left-panel${layout.navigatorCollapsed ? " collapsed" : ""}`} aria-label="Navigator">
-        {layout.navigatorCollapsed && <div className="panel-rail"><button aria-label="Expand Navigator" title="Expand Navigator" onClick={() => setLayout(previous => ({ ...previous, navigatorCollapsed: false }))}><PanelLeft size={17} /></button>{(["Shots", "Outliner", "Assets"] as const).map(tab => { const Icon = tab === "Shots" ? Film : tab === "Outliner" ? Layers : Box; return <button key={tab} aria-label={tab} title={tab} onClick={() => { setLeftTab(tab); setLayout(previous => ({ ...previous, navigatorCollapsed: false })); }}><Icon size={17} /></button>; })}</div>}
-        <div className="panel-expanded" hidden={layout.navigatorCollapsed}><nav className="panel-tabs" aria-label="Navigator tabs">{(["Shots", "Outliner", "Assets"] as const).map(tab => <button key={tab} aria-selected={leftTab === tab} onClick={() => setLeftTab(tab)}>{tab}</button>)}<button className="panel-control" aria-label="Collapse Navigator" title="Collapse Navigator" onClick={() => setLayout(previous => ({ ...previous, navigatorCollapsed: true }))}><PanelLeft size={15} /></button></nav>
-        <div className="left-scroll">{!projectId ? <Empty icon={<Layers size={24} />} title="No active project" text="Open or create a workstation folder using the project menu." /> : leftTab === "Assets" ? <Catalogue api={api} projectId={projectId} {...catalogueIdentity} visible={!layout.navigatorCollapsed} items={data.items} retainedArtifacts={data.retainedArtifacts} selectedVersionId={version?.version_id ?? null} refreshRevision={data.catalogueRevision} onSelect={onSelect} onInspectArtifact={onInspectArtifact} onCreateAsset={onCreateAsset} /> : leftTab === "Outliner" ? Outliner ? <Outliner {...reviewProps} /> : <Empty icon={<PanelLeft size={24} />} title="Outliner unavailable" text="The published proxy outliner is not installed. No scene objects have been inferred." /> : Storyboards ? <Storyboards {...reviewProps} refreshRevision={data.catalogueRevision} /> : <Empty icon={<Film size={24} />} title="Shot browser unavailable" text="Storyboard navigation is not installed. Published items remain available under Assets." />}</div>
+        {layout.navigatorCollapsed && <div className="panel-rail"><button aria-label="Expand Navigator" title="Expand Navigator" onClick={() => setLayout(previous => ({ ...previous, navigatorCollapsed: false }))}><PanelLeft size={17} /></button>{(["Shots", "Outliner", "Assets"] as const).map(tab => { const Icon = tab === "Shots" ? Film : tab === "Outliner" ? Layers : Box; return <button key={tab} aria-label={tab} title={tab} onClick={() => { chooseNavigatorTab(tab); setLayout(previous => ({ ...previous, navigatorCollapsed: false })); }}><Icon size={17} /></button>; })}</div>}
+        <div className="panel-expanded" hidden={layout.navigatorCollapsed}><nav className="panel-tabs" aria-label="Navigator tabs">{(["Shots", "Outliner", "Assets"] as const).map(tab => <button key={tab} aria-selected={leftTab === tab} onClick={() => chooseNavigatorTab(tab)}>{tab}</button>)}<button className="panel-control" aria-label="Collapse Navigator" title="Collapse Navigator" onClick={() => setLayout(previous => ({ ...previous, navigatorCollapsed: true }))}><PanelLeft size={15} /></button></nav>
+        <div className="left-scroll">{!projectId ? <Empty icon={<Layers size={24} />} title="No active project" text="Open or create a workstation folder using the project menu." /> : <>
+          {Outliner && <Outliner api={api} projectId={projectId} version={inspectedArtifact ? null : version} items={data.items} retainedArtifacts={data.retainedArtifacts} retainedArtifactReadOrder={data.retainedArtifactReadOrder} selectionRevision={data.selectionRevision} hydrated={data.hydrated} visible={!layout.navigatorCollapsed && leftTab === "Outliner"} topologyRevision={data.catalogueRevision} connection={data.connection} onOpenVersion={onSelect} onOpenShot={onOpenShot} onInspectArtifact={onInspectArtifact} />}
+          {leftTab === "Assets" && <Catalogue api={api} projectId={projectId} {...catalogueIdentity} visible={!layout.navigatorCollapsed} items={data.items} retainedArtifacts={data.retainedArtifacts} selectedVersionId={version?.version_id ?? null} refreshRevision={data.catalogueMetadataRevision} onSelect={onSelect} onInspectArtifact={onInspectArtifact} onCreateAsset={onCreateAsset} />}
+          {leftTab === "Outliner" && !Outliner && <Empty icon={<PanelLeft size={24} />} title="Outliner unavailable" text="Published relationship navigation is not installed." />}
+          {leftTab === "Shots" && (Storyboards ? <Storyboards {...reviewProps} externalTarget={shotTarget} refreshRevision={data.catalogueMetadataRevision} /> : <Empty icon={<Film size={24} />} title="Shot browser unavailable" text="Storyboard navigation is not installed. Published items remain available under Assets." />)}
+        </>}</div>
         </div>
       </aside>
       <div className="splitter-slot">{!layout.navigatorCollapsed && <Splitter label="Resize Navigator" value={navigatorWidth} min={220} max={navigatorMax} onChange={width => setLayout(previous => ({ ...previous, navigatorWidth: width }))} />}</div>

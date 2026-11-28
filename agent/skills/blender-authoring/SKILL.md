@@ -31,6 +31,11 @@ Use `bpy.ops.file.pack_all()` for `--factory-startup` previews. Never put `"mpfb
    an owner decision rather than overwriting. A pristine untouched factory startup
    scene may be initialised directly for the active project without asking. Do not
    close an independent Blender session.
+   Before any interactive mutation, verify the actual linked library files Blender
+   resolves against the hashes of any selected published origin, current or
+   historical. Even current pins can differ from unpublished working edits. If
+   the hashes differ or cannot be verified, stop before editing. Never overwrite
+   the working file, reset Git or edit a sealed snapshot.
    Never call `bpy.ops.wm.read_factory_settings` or disable add-ons in
    `blender-execute_blender_code`. This applies with or without `use_empty=True`.
    A factory reset unloads `blender_mcp` and closes the `127.0.0.1:9876` socket
@@ -46,7 +51,15 @@ Use `bpy.ops.file.pack_all()` for `--factory-startup` previews. Never put `"mpfb
    the active project. Do not inspect credentials, environment files, siblings or
    historical tasks from a reference project. Do not inherit a particular scene,
    character, storyboard, export target or creative task from these instructions.
-6. Call `checkpoint_sources(entry_path=...)` with the explicitly owned file set,
+6. When authoring a reusable character or performance, publish the clothed,
+   weighted character once with packed textures and an optional `character` tag.
+   Keep reusable performances as named Blender Actions
+   with fake-user or NLA-strip retention, verified across save/reopen. Compose
+   each performance in the scene via Blender Library Overrides with shared stable
+   `proscenium_object_id` and unique `proscenium_instance_id` per instance. Use
+   portable `//...` library paths, never absolute or `.proscenium/snapshots/...`
+   paths. Do not duplicate the character `.blend` per animation.
+   Call `checkpoint_sources(entry_path=...)` with the explicitly owned file set,
    dependencies and `required_runtime` when needed. For `.blend` source checkpoints,
    supply `required_runtime` with `"application": "blender"` and the exact
    `bpy.app.version_string` as `version` (for example `"4.5.16 LTS"`), and pass
@@ -60,7 +73,9 @@ Use `bpy.ops.file.pack_all()` for `--factory-startup` previews. Never put `"mpfb
    `static-hair`, `python`. Tags describe requirements and do not enable GPU
    rendering, Python auto-execution or unsupported scene features.
    For a revision, pin the prior published `base_version` so unchanged scene
-   files carry forward.
+   files carry forward. Compose pinned files via `paths=[owned]` and
+   `include_sources=[pinned producer VersionRefs]`. For explicit adoption, use
+   `base_version` with the complete replacement `include_sources` set.
    List the changed `.blend` and other owned paths, and use `exclude_paths` only for
    inherited destinations to omit. For a large closure, pass the completed receipt's
    `operation_id` as `checkpoint_operation_id` and its exact `source_commit` to

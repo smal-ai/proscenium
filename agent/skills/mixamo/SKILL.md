@@ -78,6 +78,11 @@ settings so a skipped file is not mistaken for a new export.
 
 ## Source and validation
 
+- Distinguish the original motion-only FBX, retargeted Blender Action, runtime-linked
+  library (`include_sources`) and rendered video. A baked Action does not need the
+  raw FBX at render time. Record the exact source/character and motion UUIDs, rig/rest
+  pose, fps, frame range, loop and root-motion choice. Preserve upload approval and
+  attribution. An optional `motion` tag is not validation.
 - Download only inside the active project root under `assets/<slug>/source/`.
   Never download to `/tmp` or home, or through paths that resolve outside the project.
 - Track binary `.fbx`, `.dae` and `.zip` sources with Git LFS before calling

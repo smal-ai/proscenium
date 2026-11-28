@@ -54,6 +54,10 @@ same-ID capture receipts. Consumers must accept historical records without them.
   return structured issues rather than rejecting those fields at transport admission.
   Schema, semantic and preflight results are distinct. Preparation does not submit
   inference or consume an attempt.
+- `ValidationIssue` optionally identifies a pin diagnostic with exact
+  `consuming_version` and `reference` pairs and, for shot-local fields, `shot_id`.
+  In a publication batch, `path` is relative to the authored document identified
+  by `consuming_version`. These details are separate from the static message.
 - Native `search_web` accepts a non-blank `query` (up to 512 characters) and an
   optional result `limit` (1–15, default 8). It returns a project-bound
   `WebSearchResult` with ranked `WebSearchHit` records: `title`, exact source
@@ -89,10 +93,55 @@ same-ID capture receipts. Consumers must accept historical records without them.
   replace inherited files at the same destination. `exclude_paths` omits exact inherited
   destinations and cannot overlap the supplied files. Both fields require `entry_path`.
   Dependencies and runtime requirements still come from the new request, not the base.
+- `CheckpointRequest.include_sources` optionally pins exact published sources in
+  the active project and requires `entry_path`. With a composed base, omission
+  retains its direct inclusions, `[]` detaches them and a non-empty list replaces
+  them. Composition imports each direct producer's whole sealed file manifest
+  at its original destinations and origins, not ordinary dependencies or live
+  files. The consumer owns its entry. It can retire a hand-copied base file with
+  `exclude_paths`, but cannot exclude one file from an active inclusion.
+- `SourceClosure.included_sources` records the sorted, non-empty direct inclusion
+  set and is omitted when empty. These pins also appear in `dependencies`.
+  Composed closures admit at most 128 includes, 4,096 distinct destinations and
+  512 MiB hydrated bytes. A shared destination must have an identical sealed
+  row, including its origin. `includes_source` edges record verified file
+  inclusion instead of a duplicate `declared_dependency` edge. Old digests and
+  receipts remain unchanged. The single-commit offline import format rejects
+  origins it cannot represent. Normal backup and restore preserve them.
+- Replays of completed pre-`modern_binding` checkpoints require strict proof:
+  the exact original request body (including order and omission), work and invocation
+  must reproduce both persisted fingerprints and match the original candidate commit
+  message and fingerprint trailers, parent, owned paths and receipt closure inputs.
+  A receipt alone is not proof. This compatibility path never ignores `base_version`,
+  `exclude_paths` or `include_sources`, and does not apply to sorted-ref or modern intents.
 - `PublishedItem` accepts exactly one of an inline `source` or `checkpoint_operation_id`.
   The latter resolves a completed checkpoint with a closure and matching `source_commit`
   in the same project. Use it in `publication_submit` validation and `publish_outputs`
   to avoid resending large closures. Stored `VersionRecord.source` remains mandatory.
+- `getVersionRelationships` returns a `RelationshipPage` at
+  `GET /api/v1/projects/{project_id}/versions/{version_id}/relationships` for the
+  owner of the active project. Read exact pinned versions or expand one shot in
+  its storyboard version with `shot_id`. `direction=uses` (default) or `used_by`
+  returns one hop of indexed evidence, with the same edge orientation in both
+  directions. Partial coverage is not evidence that there are no consumers.
+  Cursors bind to the project, root, direction, sort and relationship revision.
+  On `409 relationship_revision_changed`, restart at page one. Current and owner
+  selection badges do not alter immutable relationships or source digests. A
+  missing artefact record has `state: missing` and null kind and purpose.
+  Shot and panel endpoints include their owning board version summary in `nodes`,
+  even on reverse pages. A sequence entry or contributor's nullable `shot_id`
+  is local to the recorded sequence input, not a storyboard pin. This route is
+  strictly read-only: it does not extend sliding owner sessions (`refresh=False`).
+  An expired owner session returns `401`.
+- Authored `Shot` and projected `ShotPlan.shots[]` optionally carry `planned_assets`,
+  a unique list of exact `VersionRef` pairs for assets in the active project.
+  Omitted means not recorded and remains omitted on reads. `[]` means no pins
+  declared for that shot. Neither is evidence of what appears on screen. The
+  storyboard closure must pin the union of board-wide `asset_dependencies`, all
+  planned assets and all bound scenes. Shot pins do not become board references
+  or cause asset bytes to be loaded. A `planned_asset` relationship links the
+  exact shot and its owning board version to the pinned asset version. It records
+  intent, not scene binding, source inclusion or owner selection.
 
 JSON HTTP bodies and successful JSON responses reference named normative definitions.
 Query parameters use explicit string/integer schemas, with string enums preserved in

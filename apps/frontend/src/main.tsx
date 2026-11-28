@@ -2,7 +2,8 @@ import { createRoot } from "react-dom/client";
 import { StudioApp } from "./app/StudioApp";
 import { capturePairing, watchPairingHash } from "./app/Pairing";
 import { StoryboardBrowser } from "./features/storyboards";
-import { ReviewWorkspace, Outliner, CriticPanel } from "./features/review";
+import { ReviewWorkspace, CriticPanel } from "./features/review";
+import { Outliner } from "./features/outliner/Outliner";
 import { CatalogueBrowser } from "./features/catalogue";
 import { AssistantStatus } from "./features/chat";
 

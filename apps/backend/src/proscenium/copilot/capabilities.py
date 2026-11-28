@@ -11,8 +11,9 @@ from proscenium.api.errors import DomainError
 from proscenium.catalogue import validation
 from proscenium.catalogue.service import CHECKPOINT_SOURCE_CONFLICT
 from proscenium.catalogue.validation import SAFE_VALIDATION_REASONS
-from proscenium.contracts import canonical, validate
+from proscenium.contracts import SCHEMA, canonical, validate
 from proscenium.db.store import now
+from proscenium.guidance import reviewed_reason
 from proscenium.previews.journal import (
     UNSUPPORTED_BLENDER_FEATURE_REASON,
     unsupported_blender_features,
@@ -31,8 +32,10 @@ from proscenium.providers.preparation import (
     models,
     video_recipe,
 )
+from proscenium.shot_plan_impact import compare, impact
 from proscenium.sources.common import git, relative
 from proscenium.sources.read_only import read_authored_json, read_closure_files
+from proscenium.sources.resolver import Resolver
 
 from .native import (
     Configuration,
@@ -406,64 +409,6 @@ def load_document(root: Path, path: str) -> Any:
     return json.loads(data)
 
 
-def impact(plan: dict[str, Any], changed: set[str]) -> dict[str, Any]:
-    global_ids = {plan["plan_id"], *plan["brief_artifact_ids"]}
-    for dependency in plan["asset_dependencies"]:
-        global_ids.update(dependency.values())
-    affected: list[str] = []
-    frames: list[str] = []
-    artifacts: set[str] = set()
-    scenes: set[str] = set()
-    for shot in plan["shots"]:
-        local_ids = {shot["shot_id"]}
-        if shot["scene_version"]:
-            local_ids.update(shot["scene_version"].values())
-        for frame in shot["frames"]:
-            local_ids.add(frame["frame_id"])
-            if frame["artifact_id"]:
-                local_ids.add(frame["artifact_id"])
-        if changed & (global_ids | local_ids):
-            affected.append(shot["shot_id"])
-            frames.extend(frame["frame_id"] for frame in shot["frames"])
-            artifacts.update(
-                frame["artifact_id"] for frame in shot["frames"] if frame["artifact_id"]
-            )
-            if shot["scene_version"]:
-                scenes.add(shot["scene_version"]["version_id"])
-    return dict(
-        affected_shot_ids=affected,
-        affected_frame_ids=frames,
-        downstream_artifact_ids=sorted(artifacts),
-        downstream_scene_version_ids=sorted(scenes),
-    )
-
-
-def compare(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
-    old = {s["shot_id"]: s for s in before["shots"]}
-    new = {s["shot_id"]: s for s in after["shots"]}
-    changed = {
-        key for key in old.keys() | new.keys() if canonical(old.get(key)) != canonical(new.get(key))
-    }
-    reordered = list(old) != list(new)
-    if reordered or any(
-        canonical(before.get(k)) != canonical(after.get(k))
-        for k in ("plan_id", "project_id", "treatment", "brief_artifact_ids", "asset_dependencies")
-    ):
-        changed.update(old.keys() | new.keys())
-    reports = [impact(plan, changed) for plan in (before, after)]
-    return dict(
-        changed_shot_ids=sorted(changed),
-        removed_shot_ids=sorted(old.keys() - new.keys()),
-        removed_frame_ids=sorted(
-            {f["frame_id"] for s in old.values() for f in s["frames"]}
-            - {f["frame_id"] for s in new.values() for f in s["frames"]}
-        ),
-        shot_order_changed=reordered,
-        stable_plan_id=before["plan_id"] == after["plan_id"],
-        **{key: sorted(set(reports[0][key]) | set(reports[1][key])) for key in reports[0]},
-    )
-
-
 def validate_authored_document(
     services: Any, project_id: str, request: dict[str, Any]
 ) -> dict[str, Any]:
@@ -555,17 +500,7 @@ def validate_authored_document(
                 }
                 for row in batch.values():
                     git(root, "cat-file", "-e", row["source_commit"] + "^{commit}")
-                    files = read_closure_files(services, project_id, row["source"], batch=batch)
-                    entry = next(
-                        f
-                        for f in row["source"]["files"]
-                        if f["destination"] == row["source"]["entry_path"]
-                    )
-                    if (
-                        entry["origin"]["kind"] == "git"
-                        and entry["origin"]["commit"] != row["source_commit"]
-                    ):
-                        raise DomainError("source_conflict", 409)
+                    validation.publication_entry(row)
                     if row["kind"] in {"storyboard", "sequence"}:
                         authored = read_authored_json(services, project_id, row, batch=batch)
                         issues = validation.schema_issues(
@@ -577,8 +512,12 @@ def validate_authored_document(
                         documents[row["version_id"]] = authored
                         if row["kind"] == "sequence":
                             maps.update(catalogue.frame_maps(project_id, authored))
-                    if row["source"]["entry_path"] not in files:
-                        raise DomainError("dependency_missing", 422)
+                    elif "included_sources" in row["source"]:
+                        Resolver(services).verify_composed(
+                            project_id, row["source"], batch=batch, collect=False
+                        )
+                    else:
+                        read_closure_files(services, project_id, row["source"], batch=batch)
                     for identity in row["artifact_ids"]:
                         catalogue.artifacts.ready_path(project_id, identity)
                 with store.transaction(write=False) as tx:
@@ -616,18 +555,49 @@ def validate_authored_document(
             code = exc.code if isinstance(exc, DomainError) else "source_unavailable"
             result["issues"] = exc.details.get("issues", []) if isinstance(exc, DomainError) else []
             if not result["issues"]:
+                details = {}
+                if (
+                    isinstance(exc, DomainError)
+                    and exc.message in validation.PIN_DIAGNOSTIC_REASONS
+                ):
+                    definition = KINDS[kind]
+                    if kind == "publication_submit":
+                        # The path is relative to the authored document, not the
+                        # submission envelope. Bind it to an exact submitted item.
+                        for item in document["items"]:
+                            if validation.exact_ref(item) == exc.details.get("consuming_version"):
+                                definition = {
+                                    "storyboard": "AuthoredShotPlan",
+                                    "sequence": "SequenceMap",
+                                }.get(item["kind"], definition)
+                                break
+                    details = validation.safe_pin_diagnostics(exc, (SCHEMA["$defs"][definition],))
+                    if kind == "publication_submit" and definition == "PublicationSubmit":
+                        details.pop("consuming_version", None)
+                elif (
+                    kind == "publication_submit"
+                    and isinstance(exc, DomainError)
+                    and exc.safe_for_model
+                    and reviewed_reason(exc.message)
+                    and exc.code in {"dependency_collision", "dependency_missing"}
+                ):
+                    details = validation.safe_pin_diagnostics(
+                        exc, (SCHEMA["$defs"]["PublicationSubmit"],)
+                    )
                 result["issues"] = [
                     dict(
                         phase="semantic",
                         code=code,
-                        path="$",
+                        path=details.pop("path", "$"),
                         message=exc.message
                         if isinstance(exc, DomainError)
                         and (
                             exc.message in SAFE_VALIDATION_REASONS
                             or exc.message == CHECKPOINT_SOURCE_CONFLICT
+                            or (exc.safe_for_model and reviewed_reason(exc.message) is not None)
                         )
                         else "Authored document relationships or pinned sources failed validation",
+                        **details,
                     )
                 ]
     return validate("AuthoredDocumentValidationResult", result)

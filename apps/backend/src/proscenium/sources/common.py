@@ -73,6 +73,7 @@ def git_environment(env: dict[str, str] | None = None) -> dict[str, str]:
         "GIT_TERMINAL_PROMPT": "0",
         "GIT_LFS_SKIP_SMUDGE": "1",
         "GIT_NO_REPLACE_OBJECTS": "1",
+        "GIT_NO_LAZY_FETCH": "1",
         "GIT_GRAFT_FILE": "/dev/null",
         **(env or {}),
     }

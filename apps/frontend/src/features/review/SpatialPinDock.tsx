@@ -161,6 +161,7 @@ export interface SpatialPinController {
   serverRevision: AnnotationSnapshot | null;
   editText: (text: string) => void;
   save: () => Promise<void>;
+  prepareImageOnly: ContextPreparer;
   queue: () => Promise<void>;
   loadServerRevision: () => void;
   rebaseConflict: () => void;
@@ -336,7 +337,11 @@ export function useSpatialPinController({
     await waitForDraftEdits(working);
     // Ensure clean target + composite markup exist on server even if proxy is offline.
     if (!working.fallbackOperation) {
-      working = await renderArtifacts(working);
+      if (working.state !== "saved" || (!working.annotation.markup_artifact_id && working.annotation.markups.length)) {
+        working = await renderArtifacts(working);
+      }
+      // Uploads belong to the derivative. The original annotation in the outbox
+      // must still match its own saved revision, even if an upload is retried.
       const annotation = structuredClone(working.annotation);
       if (working.targetBlob && !working.targetUploaded) {
         if (!working.targetUploadId) {
@@ -351,8 +356,6 @@ export function useSpatialPinController({
           idempotencyKey: working.targetUploadId!,
         });
         annotation.target.artifact_id = targetArtifact.artifact_id;
-        working = {...working, annotation, targetUploaded: true};
-        await saveDraft(working);
       }
       if (!annotation.markup_artifact_id && working.markup) {
         if (!working.markupUploadId) {
@@ -365,8 +368,6 @@ export function useSpatialPinController({
           idempotencyKey: working.markupUploadId!,
         });
         annotation.markup_artifact_id = markupArtifact.artifact_id;
-        working = {...working, annotation};
-        await saveDraft(working);
       }
       const derived: AnnotationSnapshot = {
         ...annotation,
@@ -407,33 +408,34 @@ export function useSpatialPinController({
   const prepareRef = useRef<ContextPreparer>(async () => {
     throw new Error("Spatial annotation preparation is not ready");
   });
-  prepareRef.current = async () => {
-    if (proxyUnavailableReason) {
-      if (!confirmImageOnly) {
-        throw new Error("Original 3D proxy is unavailable. Confirm image-only fallback in Review before sending.");
-      }
-      if (placementCommitting || saveLatch.current || queueInFlight.current || discard.discardLatch.current) throw new Error("Annotation operation is already in progress");
-      discard.cancel();
-      saveLatch.current = true;
-      setSaving(true);
-      try {
-        return structuredClone(annotationContext(await prepareFallbackSnapshot(), versionKind));
-      } finally {
-        saveLatch.current = false;
-        if (mounted.current) setSaving(false);
-      }
+  async function prepareImageOnly(): Promise<TurnSelection> {
+    if (!confirmImageOnly) {
+      throw new Error("Original 3D proxy is unavailable. Confirm image-only fallback in Review before sending.");
     }
-    return structuredClone(annotationContext((await prepareSavedDraft()).annotation, versionKind));
-  };
+    if (placementCommitting || saveLatch.current || queueInFlight.current || discard.discardLatch.current) throw new Error("Annotation operation is already in progress");
+    discard.cancel();
+    saveLatch.current = true;
+    setSaving(true);
+    try {
+      return annotationContext(await prepareFallbackSnapshot(), versionKind);
+    } finally {
+      saveLatch.current = false;
+      if (mounted.current) setSaving(false);
+    }
+  }
+  prepareRef.current = async () => proxyUnavailableReason ? prepareImageOnly()
+    : structuredClone(annotationContext((await prepareSavedDraft()).annotation, versionKind));
 
+  // The controller remains alive for the 2D editor's image-only outbox. Only
+  // its authority to register the default context preparer follows the 3D dock.
   useLayoutEffect(() => {
     mounted.current = true;
-    if (!enabled) return () => { mounted.current = false; };
+    return () => { mounted.current = false; };
+  }, []);
+  useLayoutEffect(() => {
+    if (!enabled) return;
     onContextPreparer?.(() => prepareRef.current());
-    return () => {
-      mounted.current = false;
-      onContextPreparer?.(null);
-    };
+    return () => onContextPreparer?.(null);
   }, [enabled, onContextPreparer]);
 
   async function save() {
@@ -518,6 +520,7 @@ export function useSpatialPinController({
     serverRevision,
     editText,
     save,
+    prepareImageOnly,
     queue,
     loadServerRevision,
     rebaseConflict,
@@ -583,7 +586,6 @@ export function SpatialPinFallbackView({
   const snapshotArtifact = annotation.markup_artifact_id ?? annotation.target.artifact_id;
   const imageSrc = localUrl ?? mediaUrl(draft.projectId, snapshotArtifact);
   const showSvgOverlay = !draft.markup && !annotation.markup_artifact_id;
-  const hit = annotation.spatial_hits[0];
 
   return (
     <div className="review-canvas spatial-fallback-view" aria-label="Unavailable proxy marked snapshot">
@@ -598,20 +600,27 @@ export function SpatialPinFallbackView({
           ))}
         </svg>
       )}
-      <div className="spatial-fallback-banner" role="alert">
-        <strong>Original 3D proxy is unavailable ({hit ? `${hit.proxy_artifact_id} / ${hit.mapping_artifact_id}` : "unverified"}): {reason}</strong>
-        <span>The marked 2D snapshot remains viewable on {annotation.target.version_id}, and will not be retargeted onto newer geometry.</span>
-        <label className="spatial-fallback-confirm">
-          <input
-            type="checkbox"
-            checked={controller.confirmImageOnly}
-            onChange={e => controller.setConfirmImageOnly(e.target.checked)}
-          />
-          <span>Send image-only snapshot without 3D spatial hit</span>
-        </label>
-      </div>
+      <SpatialFallbackNotice annotation={annotation} reason={reason} controller={controller}/>
     </div>
   );
+}
+
+export function SpatialFallbackNotice({ annotation, reason, controller, inline, disabled }: {
+  annotation: AnnotationSnapshot;
+  reason: string;
+  controller: Pick<SpatialPinController, "confirmImageOnly" | "setConfirmImageOnly">;
+  inline?: boolean;
+  disabled?: boolean;
+}) {
+  const hit = annotation.spatial_hits[0];
+  return <div className={`spatial-fallback-banner${inline ? " spatial-fallback-inline" : ""}`} role="alert">
+    <strong>Original 3D proxy is unavailable ({hit ? `${hit.proxy_artifact_id} / ${hit.mapping_artifact_id}` : "unverified"}): {reason}</strong>
+    <span>The marked 2D snapshot remains viewable on {annotation.target.version_id}, and will not be retargeted onto newer geometry.</span>
+    <label className="spatial-fallback-confirm">
+      <input type="checkbox" checked={controller.confirmImageOnly} disabled={disabled} onChange={e => controller.setConfirmImageOnly(e.target.checked)}/>
+      <span>Send image-only snapshot without 3D spatial hit</span>
+    </label>
+  </div>;
 }
 
 export function SpatialPinDock({

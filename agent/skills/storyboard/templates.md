@@ -72,5 +72,12 @@ until a scene is authored. The shared validator is authoritative.
 Revision handoff: exact before/after source commits and plan IDs, changed shot/frame
 IDs, removed IDs, helper impact report, pinned assets and stale scene/image inputs,
 unresolved work, checkpoint/publication receipts. Do not regenerate unaffected work.
-Helper impact is conservative because contract 1.0 has plan-level asset dependencies,
-not an authored per-shot dependency graph. It does not invent a parallel graph.
+Optional `Shot.planned_assets` pins exact published `kind: "asset"` `VersionRef`s for
+one shot. Omit it when unrecorded or use `[]` when no pins are declared. Never turn
+`motion_beats` prose into pins. Impact checks scope shot-local pins to their shots
+while board-wide `asset_dependencies` conservatively affect every shot. Neither
+list proves on-screen visibility. At publication, `SourceClosure.dependencies`
+must include the deduplicated union of both asset sets and bound `scene_version`s.
+Do not roll shot-local pins into `asset_dependencies`. An asset may derive from
+board v1 via `derived_from` and be planned in board v2 without editing v1 or
+forming a same-version cycle.

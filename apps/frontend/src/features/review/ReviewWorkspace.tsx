@@ -17,12 +17,13 @@ import { formatRenderPresetOption, RENDER_PRESETS, resolveRenderTargetDimensions
 import { annotationContext, cleanTargetRole, unmappedVideoContext } from "./context";
 import { DecodedReviewImage, decodedImageIdentity } from "./DecodedReviewImage";
 import { frameCamera } from "./frameCamera";
+import { InspectionObjects } from "./InspectionObjects";
 import { generationOutputs, imageTarget, targetJobId } from "./jobIdentity";
 import { canStepKeyframePass, describeKeyframePassStatus, isFrameRendering, resolveDirectKeyframeJump, sortedReadyFrames, stepKeyframePass } from "./keyframeStepping";
 import { formatPassOptionLabels, orderVersionJobs, selectablePassJobs } from "./passOrder";
 import { pinMarkupLabel, sha256Hex, verifySpatialMapping } from "./spatial";
 import { SpatialPinDock, SpatialPinFallbackView, SpatialPinHeader, useSpatialPinController } from "./SpatialPinDock";
-import { useReviewSelection } from "./state";
+import { compatibleObjects, useReviewSelection } from "./state";
 import { clipSequenceDelivery, currentRetainedPreview, directPublishedVideo, MediaMetadata, RetainedReview, ReviewEmpty, ReviewModeSwitcher, ReviewVideo, SequenceReelReview } from "./ReviewChrome";
 import { proxyJobsFingerprint, reviewJobsFingerprint } from "./refreshKeys";
 import "./review.css";
@@ -33,6 +34,7 @@ type Mode = "3d_inspection" | "keyframes" | "animation";
 type StoryboardPanel = { shot_id: string; frame_id: string; role: string; composition: string; artifact_id: string };
 type StoryboardTarget = StoryboardPanel & { target: FrameTarget };
 type UnmappedCapture = FrozenProxyCapture & { clickUv: [number, number] };
+const NO_OBJECTS: TurnSelection["selected_objects"] = [];
 
 function formatTargetOrigin(origin: FrameTarget["origin"]): string {
   if (origin === "proxy_capture") return "3D capture";
@@ -92,7 +94,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const [mapping, setMapping] = useState<ProxyMapping | null>(null);
   const [pinnedMapping, setPinnedMapping] = useState<ProxyMapping | null>(null);
   const [pinnedMappingError, setPinnedMappingError] = useState<string | null>(null);
-  const [proxyLoadError, setProxyLoadError] = useState<string | null>(null);
+  const [proxyLoadError, setProxyLoadError] = useState<{ proxyId: string; message: string } | null>(null);
   const [pinMode, setPinMode] = useState(false);
   const [editing2D, setEditing2D] = useState(false);
   const [restorePinCamera, setRestorePinCamera] = useState<Camera | null>(null);
@@ -165,7 +167,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   const externalPrimary = JSON.stringify({target: external?.target ?? null, annotation: external?.annotations.map(a => [a.annotation_id,a.saved_revision]) ?? []});
   const choice = useReviewSelection();
   const scope = `${projectId}:${version?.version_id}`;
-  const selected = choice.scope === scope ? choice.selected : [];
+  const scopedSelection = choice.scope === scope ? choice.selected : NO_OBJECTS;
   const versionId = version?.version_id;
   const versionJobs = useMemo(() => jobs.filter(j => j.target.version?.version_id === versionId), [jobs, versionId]);
   const orderedVersionJobs = useMemo(() => orderVersionJobs(versionJobs, version?.preview_job_ids), [versionJobs, version?.preview_job_ids]);
@@ -227,7 +229,6 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     || artifacts.some(value => value.state !== "ready" && (value.artifact_id === target.artifact_id || value.artifact_id === target.media_artifact_id || value.artifact_id === target.frame_map_artifact_id)));
   const readyToCapture = visible && !targetUnavailable && (mode === "keyframes" ? !!target && decodedImage === decodedImageIdentity(projectId, target) : captureReady);
   const imageFailure = useCallback((message: string) => setError(message), []);
-  const handleProxyError = useCallback((message: string) => setProxyLoadError(message), []);
 
   const changeDraft = useCallback((next: Draft) => {
     setDrafts(previous => [...previous.filter(d => d.key !== next.key), next]);
@@ -240,14 +241,15 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   // Resolve exact pinned ProxyMapping by mapping_artifact_id when a spatial annotation is active.
   const matchingCurrentMap = useMemo(() => {
     if (!pinnedHit || !version || !mapping) return null;
-    if (mapping.mapping_artifact_id !== pinnedHit.mapping_artifact_id) return null;
+    if (mapping.project_id !== projectId || mapping.mapping_artifact_id !== pinnedHit.mapping_artifact_id) return null;
     return verifySpatialMapping(mapping, pinnedHit, version.source.digest) === null ? mapping : null;
-  }, [mapping, pinnedHit, version]);
+  }, [mapping, pinnedHit, projectId, version]);
+
+  const pinnedMappingId = pinnedHit?.mapping_artifact_id;
 
   useEffect(() => {
     setPinnedMapping(null);
     setPinnedMappingError(null);
-    setProxyLoadError(null);
     if (!pinnedHit || !version) return;
     if (version.version_id !== pinnedHit.version_id) {
       setPinnedMappingError(`Pinned version ${pinnedHit.version_id} differs from ${version.version_id}`);
@@ -265,7 +267,8 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       signal,
     }).then(result => {
       if (signal.aborted) return;
-      const mismatch = verifySpatialMapping(result, pinnedHit, version.source.digest);
+      const mismatch = result.project_id !== projectId || result.mapping_artifact_id !== pinnedHit.mapping_artifact_id
+        ? "Historical mapping does not match the pinned identity" : verifySpatialMapping(result, pinnedHit, version.source.digest);
       if (mismatch) setPinnedMappingError(mismatch);
       else setPinnedMapping(result);
     }).catch(e => {
@@ -286,8 +289,21 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     version?.version_id,
   ]);
 
-  const activeMapping = pinnedHit ? (matchingCurrentMap ?? pinnedMapping) : mapping;
-  const proxyUnavailableReason = pinnedHit ? (pinnedMappingError ?? proxyLoadError) : null;
+  const exactPinnedMapping = pinnedHit && version && pinnedMapping && pinnedMapping.mapping_artifact_id === pinnedMappingId
+    && pinnedMapping.project_id === projectId && !verifySpatialMapping(pinnedMapping, pinnedHit, version.source.digest) ? pinnedMapping : null;
+  const resolvedMapping = pinnedHit ? (matchingCurrentMap ?? exactPinnedMapping) : mapping;
+  const proxyIdentity = pinnedHit ?? resolvedMapping;
+  const revokedMapping = proxyIdentity && [proxyIdentity.mapping_artifact_id, proxyIdentity.proxy_artifact_id].some(id => id != null &&
+    (unavailableArtifacts.has(id) || artifacts.some(artifact => artifact.artifact_id === id && artifact.state !== "ready")));
+  const proxyUnavailableReason = revokedMapping ? "The mapping or proxy artefact is no longer available."
+    : (pinnedHit ? pinnedMappingError : null) ?? (proxyLoadError && proxyLoadError.proxyId === proxyIdentity?.proxy_artifact_id
+      ? `Could not load the inspection proxy: ${proxyLoadError.message}` : null);
+  const activeMapping = proxyUnavailableReason ? null : resolvedMapping;
+  const selected = useMemo(() => activeMapping ? compatibleObjects(scopedSelection, activeMapping)
+    : proxyUnavailableReason ? NO_OBJECTS : scopedSelection, [activeMapping, proxyUnavailableReason, scopedSelection]);
+  useLayoutEffect(() => {
+    if (scopedSelection !== selected || (activeMapping && choice.scope !== scope && choice.selected.length)) choice.select(scope, selected);
+  }, [activeMapping, choice.scope, choice.select, choice.selected.length, scope, scopedSelection, selected]);
 
   const resolveDiscardBaseline = useCallback(async (current: Draft): Promise<AnnotationSnapshot | null> => {
     const matches = (annotation: AnnotationSnapshot) => annotation.annotation_id === current.annotation.annotation_id
@@ -563,17 +579,19 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   useEffect(() => {
     const digest = version?.source.digest;
-    if (!versionId || !digest) return;
+    // A standalone published video omits the mode switcher only once known proxy
+    // support has been checked. Other versions read the proxy on entering 3D.
+    if (!visible || (mode !== "3d_inspection" && !directVideo) || pinnedMappingId || !versionId || !digest) return;
     const controller = new AbortController();
     const {signal} = controller;
     api.call("getVersionProxyMapping", {path: {project_id: projectId, version_id: versionId}, signal}).then(result => {
       if (result.version_id !== versionId || result.project_id !== projectId || result.source_closure_digest !== digest) throw new Error("Proxy mapping does not match pinned source");
       // The visible static proxy/sample is pinned too. A refresh must not replace
       // its GLB, reset orbit, or erase a working view because a read went offline.
-      if (!signal.aborted) setMapping(previous => previous ?? result);
+      if (!signal.aborted) setMapping(previous => previous?.source_closure_digest === digest ? previous : result);
     }).catch(() => { /* Keep an already validated mapping available offline. */ });
     return () => controller.abort();
-  }, [api, projectId, versionId, version?.source.digest, proxyJobsKey]);
+  }, [api, projectId, versionId, version?.source.digest, proxyJobsKey, mode, visible, pinnedMappingId, directVideo?.artifact_id]);
 
   useEffect(() => {
     const itemId = version?.item_id;
@@ -600,8 +618,11 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
   }, [draftId, activeFrameMap, version?.kind,jobs]);
 
   const hasServerTarget = !draft?.targetBlob || Boolean(draft.targetUploaded);
-  const draftContext = draft ? annotationContext(draft.annotation, version?.kind) : null;
-  const context: TurnSelection = inspectedArtifact ? {...emptySelection(), request_target: {kind: "project"}, attachments: !inspectedUnavailable && liveInspectedArtifact?.kind === "image" ? [{artifact_id: inspectedArtifact.artifact_id, role: "reference"}] : []} : draft && draftContext ? {...draftContext, annotations: draft.state === "saved" ? draftContext.annotations : [],
+  const spatialUnavailable = Boolean(isSpatialDraft && proxyUnavailableReason);
+  const draftContext = draft ? annotationContext(spatialUnavailable
+    ? {...draft.annotation, spatial_hits: [], spatial_status: "unavailable"}
+    : draft.annotation, version?.kind) : null;
+  const context: TurnSelection = inspectedArtifact ? {...emptySelection(), request_target: {kind: "project"}, attachments: !inspectedUnavailable && liveInspectedArtifact?.kind === "image" ? [{artifact_id: inspectedArtifact.artifact_id, role: "reference"}] : []} : draft && draftContext ? {...draftContext, annotations: draft.state === "saved" && !spatialUnavailable ? draftContext.annotations : [],
     // A local capture has no stable artefact ID until the outbox uploads it.
     target: hasServerTarget ? draftContext.target : null,
     attachments: draft.state === "saved" ? draftContext.attachments : hasServerTarget ? [{artifact_id: draft.annotation.target.artifact_id, role: cleanTargetRole(draft.annotation.target)}] : []}
@@ -610,7 +631,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     request_target: version ? versionRequestTarget(version, version.kind, mode === "3d_inspection" ? null : target?.shot_id) : undefined,
     view_mode: mode, target: mode === "3d_inspection" || !readyToCapture ? null : target,
     camera: mode === "3d_inspection" ? camera : targetCamera, selected_objects: selected,
-    range: mode === "3d_inspection" && mapping ? {start: mapping.sample_frame, end: mapping.sample_frame} : range,
+    range: mode === "3d_inspection" && activeMapping ? {start: activeMapping.sample_frame, end: activeMapping.sample_frame} : range,
     attachments: mode !== "3d_inspection" && target && !targetUnavailable ? [{artifact_id: target.artifact_id, role: cleanTargetRole(target)}] : []};
   const contextKey = JSON.stringify(context);
   const prepareState = useRef({context, draftKey: draft?.key});
@@ -843,7 +864,8 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
 
   const keydownRef = useRef<(event: KeyboardEvent) => void>(() => {});
   keydownRef.current = (event: KeyboardEvent) => {
-      if (!visible || (clipReel || videoOnlyVersion) && !draft) return;
+      if (event.defaultPrevented || !visible || (clipReel || videoOnlyVersion) && !draft) return;
+      if (event.target instanceof Element && event.target.closest("aside.left-panel, [aria-label='Navigator'], button, [role=button], [role=tab], [role=treeitem], a, [role=link], summary, select")) return;
       if (animationVideo && event.target instanceof Element && event.target.closest("video")) return;
       if (event.key === "Escape" && pinMode) { event.preventDefault(); setPinMode(false); return; }
       if (typingTarget(event.target) || event.ctrlKey || event.metaKey || event.altKey || draftId) return;
@@ -1046,14 +1068,14 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       if (pending && pending.phase !== "upload") throw new Error("Resolve the retained Copilot request before dismissing this capture. It will not be queued again automatically.");
       if (!pending) {
         const capture = captureHandler.current;
-        if (!capture || !mapping) throw new Error("The published inspection proxy is not ready to capture");
+        if (!capture || !activeMapping) throw new Error("The published inspection proxy is not ready to capture");
         // All source identities, camera, selected pairs and actual pixels freeze
         // before any await. The upload is not a request to render/generate.
         const frozen = capture({targetDimensions: resolveRenderTargetDimensions(renderPreset), opaqueBackdrop: true});
         const uploadId = crypto.randomUUID();
-        const selection = structuredClone({...context, request_target: versionRequestTarget(version, version.kind), target: null, camera: frozen.camera, annotations: [], approved_findings: [], attachments: [], range: {start: mapping.sample_frame, end: mapping.sample_frame}});
-        const sampleFrame = mapping.sample_frame;
-        const shotId = versionJobs.find(job => job.artifact_ids.includes(mapping.proxy_artifact_id))?.target.shot_id ?? null;
+        const sampleFrame = activeMapping.sample_frame;
+        const selection = structuredClone({...context, request_target: versionRequestTarget(version, version.kind), target: null, camera: frozen.camera, annotations: [], approved_findings: [], attachments: [], range: {start: sampleFrame, end: sampleFrame}});
+        const shotId = versionJobs.find(job => job.artifact_ids.includes(activeMapping.proxy_artifact_id))?.target.shot_id ?? null;
         const png = await frozen.png;
         const sha256 = await sha256Hex(png);
         pending = {key: captureKey, uploadId, png, sha256, dimensions: frozen.dimensions, selection, sampleFrame, shotId, phase: "upload"};
@@ -1223,7 +1245,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
             <button
               className="toolbar-btn"
               aria-pressed={pinMode}
-              disabled={!visible || !proxyReady || !mapping?.mapping_artifact_id || queueingView || placementCommitting}
+              disabled={!visible || !proxyReady || !activeMapping?.mapping_artifact_id || queueingView || placementCommitting}
               onClick={() => { setUnmappedCapture(null); setPinMode(p => !p); }}
             >
               <MapPin size={14}/>Pin note
@@ -1233,7 +1255,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
                 <span className="sr-only">Render output format</span>
                 <select
                   aria-label="Render output format"
-                  disabled={!visible || !proxyReady || queueingView || !!pendingCapture}
+                  disabled={!visible || !activeMapping || !proxyReady || queueingView || !!pendingCapture}
                   value={pendingCapture ? "retained" : renderPreset}
                   onChange={e => setRenderPreset(e.target.value as RenderPresetId)}
                 >
@@ -1243,7 +1265,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
                   ))}
                 </select>
               </label>
-              <button className="toolbar-btn toolbar-btn-accent" disabled={!visible || (!pendingCapture && !proxyReady) || !captureStoreReady || queueingView || (!!pendingCapture && pendingCapture.phase !== "upload")} onClick={() => void renderThisView()}><CameraIcon size={14}/>{pendingCapture?.phase === "upload" ? `Retry captured view upload (${pendingCapture.dimensions.width} × ${pendingCapture.dimensions.height})` : "Render this view"}</button>
+              <button className="toolbar-btn toolbar-btn-accent" disabled={!visible || (!pendingCapture && (!activeMapping || !proxyReady)) || !captureStoreReady || queueingView || (!!pendingCapture && pendingCapture.phase !== "upload")} onClick={() => void renderThisView()}><CameraIcon size={14}/>{pendingCapture?.phase === "upload" ? `Retry captured view upload (${pendingCapture.dimensions.width} × ${pendingCapture.dimensions.height})` : "Render this view"}</button>
             </div>
           </> : !mappedSequence && !animationVideo && <button className="toolbar-btn toolbar-btn-accent" aria-label="Annotate presented frame" disabled={!visible || !target || !readyToCapture} onClick={() => void annotate()}><PenLine size={14}/>Annotate</button>}
         </div>
@@ -1257,6 +1279,8 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       <p>{version.name} · {version.artifact_ids.length} version artefacts</p>
       <div className="review-drawer-items"><strong>Published image artefacts</strong>{artifacts.filter(a => a.kind === "image").map(a => <span className="toolbar-chip" key={a.artifact_id}>{a.artifact_id}: {a.state} · {a.purpose}</span>)}</div>
     </section>}
+    {!show2DEditor && (mode === "3d_inspection" || isSpatialDraft) && <InspectionObjects mapping={activeMapping} unavailableReason={proxyUnavailableReason} pinned={Boolean(pinnedHit)} sampleFrame={pinnedHit ? undefined : resolvedMapping?.sample_frame}
+      loading={Boolean(pinnedHit && !activeMapping && !proxyUnavailableReason)} selected={selected} onSelect={pairs => choice.select(scope, pairs)} />}
     {draft && show2DEditor ? (
       <AnnotationEditor
         key={draft.key}
@@ -1267,6 +1291,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
         onQueue={onQueue}
         onContextPreparer={registerEditorPreparer}
         onReturnTo3D={isSpatialDraft && !proxyUnavailableReason ? () => setEditing2D(false) : undefined}
+        spatialFallback={isSpatialDraft && proxyUnavailableReason ? {reason: proxyUnavailableReason, controller: spatialController} : undefined}
         onClose={closeDraft}
         onDiscard={discardActiveDraft}
         resolveDiscardBaseline={resolveDiscardBaseline}
@@ -1275,7 +1300,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       <SpatialPinFallbackView draft={draft} reason={proxyUnavailableReason} controller={spatialController}/>
     ) : (mode === "3d_inspection" || (draft && isSpatialDraft)) ? (
       activeMapping ? (
-        <MediaBoundary key={activeMapping.proxy_artifact_id} onError={handleProxyError}>
+        <MediaBoundary key={activeMapping.proxy_artifact_id} onError={message => setProxyLoadError({ proxyId: activeMapping.proxy_artifact_id, message })}>
           <Suspense fallback={<div className="review-proxy" role="status">Loading 3D inspection viewer…</div>}>
             <ProxyView
               visible={visible}
@@ -1300,7 +1325,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
       ) : pinnedHit ? (
         <div className="viewer-empty">Loading pinned 3D proxy {pinnedHit.mapping_artifact_id}…</div>
       ) : (
-        <div className="viewer-empty">Inspection proxy unavailable for {version.version_id}. Image-space review remains available.</div>
+        <div className="viewer-empty">Inspection proxy unavailable for {version.version_id}. {proxyUnavailableReason} Image-space review remains available.</div>
       )
     ) : mode === "animation" ? assembly && activeFrameMap ? <SequencePlayer visible={visible} key={assembly.artifact_id} projectId={projectId} artifact={assembly} mapping={activeFrameMap.map} requestedFrame={requestedFrame} onCapture={async (blob,frame,width,height) => {
           const mapIsCurrent = () => activeFrameMapRef.current?.id === activeFrameMap.id && !readinessRef.current.revoked.has(activeFrameMap.id)
@@ -1318,7 +1343,7 @@ function Workspace({visible: surfaceVisible = true, api, projectId, version: sup
     ) : (
       <div className={`review-bar review-transport-bar${mode === "3d_inspection" ? "" : " review-playback-transport"}`} aria-label="Review transport">
         {mode === "3d_inspection" ? <>
-          <span className="toolbar-chip">Sample frame {mapping?.sample_frame ?? 1}</span>
+          {activeMapping && <span className="toolbar-chip">Sample frame {activeMapping.sample_frame}</span>}
           <button className="toolbar-btn" disabled={!visible || !proxyReady || !activeMapping} onClick={() => {
             if (activeMapping) setFrameRequest(previous => ({nonce: (previous?.nonce ?? 0) + 1,
               proxyId: activeMapping.proxy_artifact_id, restore: effectiveRestoreCamera, restoreNonce: restorePinNonce}));

@@ -42,7 +42,57 @@ MIGRATIONS = [
       state TEXT NOT NULL CHECK(state IN ('reserved','consumed','released')));
     CREATE TABLE resource_claims (
       resource TEXT PRIMARY KEY, project_id TEXT NOT NULL, job_id TEXT NOT NULL, attempt_id TEXT NOT NULL);
+    """,
     """
+    CREATE TABLE relationship_meta (
+      id INTEGER PRIMARY KEY CHECK(id=1), relationship_revision INTEGER NOT NULL,
+      index_schema_version INTEGER NOT NULL);
+    INSERT INTO relationship_meta VALUES (1,0,1);
+    CREATE TABLE relationship_versions (
+      version_id TEXT PRIMARY KEY, item_id TEXT NOT NULL, kind TEXT NOT NULL,
+      coverage_state TEXT NOT NULL CHECK(coverage_state IN ('complete','partial')),
+      reasons_json TEXT NOT NULL CHECK(json_valid(reasons_json)), indexed_at TEXT NOT NULL,
+      source_digest TEXT NOT NULL, indexed_revision INTEGER NOT NULL);
+    CREATE INDEX relationship_coverage ON relationship_versions (coverage_state,reasons_json,version_id);
+    CREATE TABLE relationship_edges (
+      producer_version_id TEXT NOT NULL,
+      from_kind TEXT NOT NULL, from_version_id TEXT NOT NULL, from_local_id TEXT NOT NULL,
+      to_kind TEXT NOT NULL, to_version_id TEXT NOT NULL, to_local_id TEXT NOT NULL,
+      sort_group INTEGER NOT NULL, sort_ordinal INTEGER NOT NULL, sort_tie TEXT NOT NULL,
+      relation TEXT NOT NULL, from_json TEXT NOT NULL, to_json TEXT NOT NULL, details_json TEXT NOT NULL,
+      PRIMARY KEY (producer_version_id,sort_tie));
+    CREATE INDEX relationship_outgoing ON relationship_edges
+      (from_kind,from_version_id,from_local_id,sort_group,sort_ordinal,sort_tie);
+    CREATE INDEX relationship_incoming ON relationship_edges
+      (to_kind,to_version_id,to_local_id,sort_group,sort_ordinal,sort_tie);
+    CREATE TABLE relationship_shots (
+      board_version_id TEXT NOT NULL, shot_id TEXT NOT NULL, board_item_id TEXT NOT NULL,
+      ordinal INTEGER NOT NULL, intent TEXT NOT NULL, binding_status TEXT NOT NULL,
+      PRIMARY KEY (board_version_id,shot_id));
+    CREATE TABLE relationship_panels (
+      board_version_id TEXT NOT NULL, shot_id TEXT NOT NULL, frame_id TEXT NOT NULL,
+      board_item_id TEXT NOT NULL, ordinal INTEGER NOT NULL, role TEXT NOT NULL,
+      composition TEXT NOT NULL, authored_state TEXT NOT NULL, artifact_id TEXT,
+      PRIMARY KEY (board_version_id,shot_id,frame_id));
+    CREATE TABLE relationship_pending (
+      version_id TEXT PRIMARY KEY, stage INTEGER NOT NULL DEFAULT 1 CHECK(stage IN (1,2)),
+      retry_count INTEGER NOT NULL DEFAULT 0 CHECK(retry_count>=0));
+    CREATE INDEX relationship_pending_order ON relationship_pending (retry_count,stage,version_id);
+    INSERT INTO relationship_pending (version_id) SELECT id FROM records WHERE namespace='versions';
+    CREATE TRIGGER relationship_queue_version AFTER INSERT ON records WHEN new.namespace='versions'
+    BEGIN
+      INSERT OR IGNORE INTO relationship_pending (version_id) VALUES (new.id);
+    END;
+    CREATE TRIGGER relationship_unqueue_indexed AFTER INSERT ON relationship_versions
+    BEGIN
+      DELETE FROM relationship_pending WHERE version_id=new.version_id;
+    END;
+    CREATE TRIGGER relationship_requeue_removed AFTER DELETE ON relationship_versions
+    WHEN EXISTS (SELECT 1 FROM records WHERE namespace='versions' AND id=old.version_id)
+    BEGIN
+      INSERT OR IGNORE INTO relationship_pending (version_id) VALUES (old.version_id);
+    END;
+    """,
 ]
 
 
@@ -157,9 +207,15 @@ class Store:
             # A separate process may have migrated since the initial version check.
             version = _schema_version(connection)
             for index in range(version, len(MIGRATIONS)):
-                for statement in MIGRATIONS[index].split(";"):
-                    if statement.strip():
+                # Trigger bodies can contain internal semicolons.
+                statement = ""
+                for part in MIGRATIONS[index].split(";")[:-1]:
+                    statement += part + ";"
+                    if sqlite3.complete_statement(statement):
                         connection.execute(statement)
+                        statement = ""
+                if statement.strip() or MIGRATIONS[index].rsplit(";", 1)[-1].strip():
+                    raise ValueError("Incomplete database migration statement")
                 connection.execute(f"PRAGMA user_version={index + 1}")
             connection.commit()
         except BaseException:

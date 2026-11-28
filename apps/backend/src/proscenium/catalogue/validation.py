@@ -1,7 +1,7 @@
 """Relationship checks for catalogue records and authored documents."""
 
 import json
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from fractions import Fraction
 from functools import cache
 from itertools import islice
@@ -30,10 +30,50 @@ INVALID_AUDIO_START = "Audio track starts at or after the end of the sequence"
 INVALID_AUDIO_FADE = "Audio track fade durations exceed the track duration"
 INVALID_AUDIO_TRIM = "Audio track trim leaves no source audio"
 
+PLANNED_ASSET_KIND = "planned_assets must reference published versions of kind asset"
+PLANNED_ASSET_DUPLICATE = "Remove the duplicate VersionRef from planned_assets"
+PLANNED_ASSET_MISSING = "Choose an existing asset version in this project for planned_assets"
+PLANNED_ASSET_IDENTITY = "Use the exact item_id and version_id of an asset in this project"
+AUTHORED_PIN_MISSING = "Authored version references must be pinned in the source closure"
+PIN_DIAGNOSTIC_REASONS = frozenset(
+    {
+        PLANNED_ASSET_KIND,
+        PLANNED_ASSET_DUPLICATE,
+        PLANNED_ASSET_MISSING,
+        PLANNED_ASSET_IDENTITY,
+        AUTHORED_PIN_MISSING,
+    }
+)
+
+
+def safe_pin_diagnostics(
+    error: DomainError,
+    schemas: Sequence[dict[str, Any]],
+    *,
+    scope: SchemaPathScope | None = None,
+) -> dict[str, Any]:
+    """Project only typed IDs and schema locations, never arbitrary error details."""
+    details = {}
+    for key, definition in (
+        ("consuming_version", "VersionRef"),
+        ("reference", "VersionRef"),
+        ("shot_id", "Id"),
+    ):
+        if (value := error.details.get(key)) is not None:
+            try:
+                details[key] = validate(definition, value)
+            except DomainError:
+                pass
+    path = error.details.get("path")
+    if isinstance(path, str) and safe_schema_path(path, schemas, scope=scope):
+        details["path"] = path
+    return details
+
 
 # Only fixed, host-authored text may be returned to Copilot as a semantic reason.
 SAFE_VALIDATION_REASONS: frozenset[str] = frozenset(
     {
+        *PIN_DIAGNOSTIC_REASONS,
         "Frame rates and weights must be reduced",
         "Frame range start must not exceed end",
         "Duplicate shot identity",
@@ -411,26 +451,122 @@ def version_reference(
     return record
 
 
-def shot_plan(tx: Transaction, document: dict[str, Any], batch: dict[str, dict[str, Any]]) -> None:
+def publication_entry(version: dict[str, Any]) -> None:
+    source = version["source"]
+    entry = next(
+        (f["origin"] for f in source["files"] if f["destination"] == source["entry_path"]), None
+    )
+    if entry is None or (entry["kind"] == "git" and entry["commit"] != version["source_commit"]):
+        raise DomainError(
+            "source_conflict",
+            409,
+            "Source closure must contain its entry_path, pinned to source_commit for a Git entry",
+            safe_for_model=True,
+        )
+
+
+PinLocations = dict[tuple[str, str], tuple[str, str | None]]
+
+
+def required_dependencies(version: dict[str, Any], references: PinLocations) -> None:
+    sealed = {version_ref_key(ref) for ref in version["source"]["dependencies"]}
+    for (item_id, version_id), (path, shot_id) in references.items():
+        if (item_id, version_id) not in sealed:
+            raise DomainError(
+                "dependency_missing",
+                422,
+                AUTHORED_PIN_MISSING,
+                safe_for_model=True,
+                path=path,
+                reference={"item_id": item_id, "version_id": version_id},
+                consuming_version=exact_ref(version),
+                shot_id=shot_id,
+            )
+
+
+def sequence_dependencies(
+    tx: Transaction, document: dict[str, Any], version: dict[str, Any]
+) -> None:
+    """Require every entry or contributor's exact version after sequence validation."""
+    records: dict[str, dict[str, Any]] = {}
+    refs: PinLocations = {}
+    for index, entry in enumerate(document["entries"]):
+        path = f"entries[{index}]"
+        if "version_id" in entry:
+            version_id = entry["version_id"]
+            item_id = _cached_record(tx, "versions", version_id, records)["item_id"]
+            refs.setdefault((item_id, version_id), (f"{path}.version_id", entry["shot_id"]))
+        for offset, contributor in enumerate(entry.get("contributors", [])):
+            if "version_id" in contributor:
+                version_id = contributor["version_id"]
+                item_id = _cached_record(tx, "versions", version_id, records)["item_id"]
+                refs.setdefault(
+                    (item_id, version_id),
+                    (f"{path}.contributors[{offset}].version_id", contributor["shot_id"]),
+                )
+    required_dependencies(version, refs)
+
+
+def shot_plan(
+    tx: Transaction,
+    document: dict[str, Any],
+    batch: dict[str, dict[str, Any]],
+    *,
+    historical: bool = False,
+    version: dict[str, Any] | None = None,
+) -> None:
     validate("AuthoredShotPlan", document)
     if document["project_id"] != tx.project_id:
         raise DomainError("scope_denied", 403)
-    for identity in document["brief_artifact_ids"]:
-        if tx.require("artifacts", identity)["state"] != "ready":
-            raise DomainError("media_unavailable", 422)
-    for reference in document["asset_dependencies"]:
+    if not historical:
+        for identity in document["brief_artifact_ids"]:
+            if tx.require("artifacts", identity)["state"] != "ready":
+                raise DomainError("media_unavailable", 422)
+    refs: PinLocations = {}
+    consuming_version = exact_ref(version) if version is not None else None
+    for index, reference in enumerate(document["asset_dependencies"]):
         version_reference(tx, reference, batch)
+        refs.setdefault(version_ref_key(reference), (f"asset_dependencies[{index}]", None))
     shots = set()
     frames = set()
-    for shot in document["shots"]:
+    for index, shot in enumerate(document["shots"]):
         if shot["shot_id"] in shots:
             raise DomainError(
                 "source_conflict", 409, "Duplicate shot identity", safe_for_model=True
             )
         shots.add(shot["shot_id"])
+        planned = set()
+        for pin_index, reference in enumerate(shot.get("planned_assets", [])):
+            key = version_ref_key(reference)
+            path = f"shots[{index}].planned_assets[{pin_index}]"
+            if key in planned:
+                raise DomainError(
+                    "invalid_request",
+                    422,
+                    PLANNED_ASSET_DUPLICATE,
+                    safe_for_model=True,
+                    path=path,
+                    reference=reference,
+                    consuming_version=consuming_version,
+                    shot_id=shot["shot_id"],
+                )
+            planned.add(key)
+            planned_asset_reference(
+                tx,
+                reference,
+                batch,
+                path=path,
+                shot_id=shot["shot_id"],
+                consuming_version=consuming_version,
+            )
+            refs.setdefault(key, (path, shot["shot_id"]))
         if shot["scene_version"] is not None:
             if version_reference(tx, shot["scene_version"], batch)["kind"] != "scene":
                 raise DomainError("source_conflict", 409)
+            refs.setdefault(
+                version_ref_key(shot["scene_version"]),
+                (f"shots[{index}].scene_version", shot["shot_id"]),
+            )
         if shot["source_range"] is not None:
             interval(shot["source_range"])
         if shot["fps"] is not None:
@@ -450,13 +586,77 @@ def shot_plan(tx: Transaction, document: dict[str, Any], batch: dict[str, dict[s
                 )
             frames.add(frame["frame_id"])
             if frame["artifact_id"] is not None:
-                artifact = tx.require("artifacts", frame["artifact_id"])
-                if artifact["kind"] != "image":
+                artifact = tx.get("artifacts", frame["artifact_id"], required=not historical)
+                if artifact is not None and artifact["kind"] != "image":
                     raise DomainError("source_conflict", 409)
-                if artifact["state"] != "ready":
+                if not historical and artifact is not None and artifact["state"] != "ready":
                     raise DomainError("media_unavailable", 422)
             elif frame["state"] in {"available", "selected"}:
                 raise DomainError("media_unavailable", 422)
+    if version is not None:
+        required_dependencies(version, refs)
+
+
+def version_ref_key(reference: dict[str, str]) -> tuple[str, str]:
+    return reference["item_id"], reference["version_id"]
+
+
+def exact_ref(version: dict[str, Any]) -> dict[str, str]:
+    return {key: version[key] for key in ("item_id", "version_id")}
+
+
+def planned_asset_reference(
+    tx: Transaction,
+    reference: dict[str, str],
+    batch: dict[str, dict[str, Any]],
+    *,
+    path: str,
+    shot_id: str,
+    consuming_version: dict[str, str] | None,
+) -> None:
+    version_id = reference["version_id"]
+    record = batch.get(version_id)
+    # Inline batch items inherit the enclosing publication's project.
+    if record is None:
+        record = tx.get("versions", version_id, required=False)
+        project_id = record.get("project_id") if record else None
+    else:
+        project_id = record.get("project_id", tx.project_id)
+    if record is None:
+        raise DomainError(
+            "dependency_missing",
+            422,
+            PLANNED_ASSET_MISSING,
+            safe_for_model=True,
+            path=path,
+            reference=reference,
+            consuming_version=consuming_version,
+            shot_id=shot_id,
+        )
+    if project_id != tx.project_id or any(
+        record.get(key) != value for key, value in reference.items()
+    ):
+        raise DomainError(
+            "scope_denied",
+            403,
+            PLANNED_ASSET_IDENTITY,
+            safe_for_model=True,
+            path=path,
+            reference=reference,
+            consuming_version=consuming_version,
+            shot_id=shot_id,
+        )
+    if record["kind"] != "asset":
+        raise DomainError(
+            "invalid_request",
+            422,
+            PLANNED_ASSET_KIND,
+            safe_for_model=True,
+            path=path,
+            reference=reference,
+            consuming_version=consuming_version,
+            shot_id=shot_id,
+        )
 
 
 def _cached_record(
@@ -526,7 +726,9 @@ def distinct_transition_source(contributor: dict[str, Any]) -> Any:
     )
 
 
-def validate_audio_tracks(tx: Transaction, document: dict[str, Any], duration: Fraction) -> None:
+def validate_audio_tracks(
+    tx: Transaction, document: dict[str, Any], duration: Fraction, *, historical: bool = False
+) -> None:
     ids = set()
     for track in document.get("audio_tracks", []):
         identity = track["track_id"]
@@ -534,10 +736,10 @@ def validate_audio_tracks(tx: Transaction, document: dict[str, Any], duration: F
             raise DomainError("invalid_request", 422, DUPLICATE_AUDIO_TRACK, safe_for_model=True)
         ids.add(identity)
         artifact = tx.get("artifacts", track["artifact_id"], required=False)
-        if (
+        if not (historical and artifact is None) and (
             not artifact
             or artifact["kind"] != "audio"
-            or artifact["state"] != "ready"
+            or (not historical and artifact["state"] != "ready")
             or artifact["project_id"] != tx.project_id
             or artifact["media_type"] not in AUDIO_DEMUXERS
             or not artifact.get("duration_seconds")
@@ -549,20 +751,27 @@ def validate_audio_tracks(tx: Transaction, document: dict[str, Any], duration: F
         effective = duration - start
         if "duration_seconds" in track:
             effective = min(effective, Fraction(str(track["duration_seconds"])))
-        source = Fraction(str(artifact["duration_seconds"])) - Fraction(
-            str(track.get("trim_start_seconds", 0))
-        )
-        if source <= 0:
-            raise DomainError("invalid_request", 422, INVALID_AUDIO_TRIM, safe_for_model=True)
-        effective = min(effective, source)
+        if artifact is not None:
+            source = Fraction(str(artifact["duration_seconds"])) - Fraction(
+                str(track.get("trim_start_seconds", 0))
+            )
+            if source <= 0:
+                raise DomainError("invalid_request", 422, INVALID_AUDIO_TRIM, safe_for_model=True)
+            effective = min(effective, source)
         fades = sum(Fraction(str(track.get(k, 0))) for k in ("fade_in_seconds", "fade_out_seconds"))
         if fades > effective:
             raise DomainError("invalid_request", 422, INVALID_AUDIO_FADE, safe_for_model=True)
 
 
 def sequence_map(
-    tx: Transaction, document: dict[str, Any], version_id: str, maps: dict[str, dict[str, Any]]
+    tx: Transaction,
+    document: dict[str, Any],
+    version_id: str,
+    maps: dict[str, dict[str, Any]] | None,
 ) -> None:
+    # Historical reads verify the sealed SequenceMap, not mutable media readiness
+    # or bytes of separate FrameMap artefacts.
+    historical = maps is None
     tracks = document.get("audio_tracks")
     if document.get("silent") is True and isinstance(tracks, list) and tracks:
         raise DomainError("invalid_request", 422, SILENT_AUDIO_TRACKS, safe_for_model=True)
@@ -585,7 +794,7 @@ def sequence_map(
         )
     clip_based = True in kinds
     fps = rational(document["fps"])
-    validate_audio_tracks(tx, document, document["frame_count"] / fps)
+    validate_audio_tracks(tx, document, document["frame_count"] / fps, historical=historical)
     next_frame = 1
     entries = set()
     version_cache: dict[str, dict[str, Any]] = {}
@@ -609,10 +818,10 @@ def sequence_map(
         if clip_based:
             clip = tx.get("artifacts", entry["clip_artifact_id"], required=False)
             dimensions = (clip or {}).get("dimensions")
-            if (
+            if not (historical and clip is None) and (
                 not clip
                 or clip["kind"] != "video"
-                or clip["state"] != "ready"
+                or (not historical and clip["state"] != "ready")
                 or clip["project_id"] != tx.project_id
                 or clip["media_type"] != "video/mp4"
                 or type(clip.get("frame_count")) is not int
@@ -626,7 +835,9 @@ def sequence_map(
                 raise DomainError(
                     "media_unavailable", 422, INVALID_CLIP_ARTEFACT, safe_for_model=True
                 )
-            if source_length != length or entry["source_frames"]["end"] > clip["frame_count"]:
+            if source_length != length or (
+                clip is not None and entry["source_frames"]["end"] > clip["frame_count"]
+            ):
                 raise DomainError(
                     "invalid_frame_mapping",
                     422,
@@ -665,6 +876,8 @@ def sequence_map(
             "Sequence entries must cover frames 1 through frame_count contiguously",
             safe_for_model=True,
         )
+    if maps is None:
+        return
     for identity in {
         entry["mapping_artifact_id"]
         for entry in document["entries"]

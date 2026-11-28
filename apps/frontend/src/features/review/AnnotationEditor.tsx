@@ -10,20 +10,21 @@ import { greyPng } from "./png";
 import { annotationContext } from "./context";
 import { allPages } from "./records";
 import { canvasPngBlob, paintMarkups, syncSpatialPinMarkup } from "./spatial";
-import { AnnotationDockActions, AnnotationTargetChip, useDraftDiscard, type DiscardBaselineResolver, type DiscardHandler } from "./SpatialPinDock";
+import { AnnotationDockActions, AnnotationTargetChip, SpatialFallbackNotice, useDraftDiscard, type DiscardBaselineResolver, type DiscardHandler, type SpatialPinController } from "./SpatialPinDock";
 import "./annotationDock.css";
 
 type Tool = Markup["kind"] | "eraser";
 const tools: Tool[] = ["stroke", "arrow", "region", "pin", "eraser", "mask"];
 const toolIcons = {stroke: Pencil, arrow: MoveUpRight, region: Square, pin: MapPin, eraser: Eraser, mask: Layers};
 
-export function AnnotationEditor({api, draft, versionKind, onChange, onQueue, onClose, onDiscard, onReturnTo3D, onContextPreparer, resolveDiscardBaseline}: {
+export function AnnotationEditor({api, draft, versionKind, onChange, onQueue, onClose, onDiscard, onReturnTo3D, onContextPreparer, resolveDiscardBaseline, spatialFallback}: {
   api: ApiClient; draft: Draft; versionKind?: VersionRecord["kind"]; onChange: (draft: Draft) => void;
   onQueue: (text: string, context: TurnSelection) => void | Promise<void>; onClose: () => void;
   onDiscard?: DiscardHandler;
   onReturnTo3D?: () => void;
   onContextPreparer?: (prepare: ContextPreparer | null) => void;
   resolveDiscardBaseline?: DiscardBaselineResolver;
+  spatialFallback?: {reason: string; controller: Pick<SpatialPinController, "confirmImageOnly" | "setConfirmImageOnly" | "prepareImageOnly" | "saving">};
 }) {
   const [tool, setTool] = useState<Tool>("stroke");
   const [width, setWidth] = useState(4);
@@ -40,13 +41,17 @@ export function AnnotationEditor({api, draft, versionKind, onChange, onQueue, on
   const image = useRef<HTMLImageElement>(null);
   const active = useRef<string | null>(null);
   const live = useRef(draft); live.current = draft;
+  const liveFallback = useRef(spatialFallback); liveFallback.current = spatialFallback;
   const writes = useRef(Promise.resolve());
   const discard = useDraftDiscard(draft, live, writes, () => saveLatch.current || queueInFlight.current,
     setError, {resolveBaseline: resolveDiscardBaseline, api, onChange});
-  const busyClose = saving || queueState === "submitting" || discard.discarding;
+  const busyClose = saving || Boolean(spatialFallback?.controller.saving) || queueState === "submitting" || discard.discarding;
   const busy = busyClose || draft.state === "saving" || draft.state === "conflict"
     || (!!draft.operation && draft.state !== "saved") || (!!draft.fallbackOperation && !draft.fallbackSaved);
   const annotation = draft.annotation;
+  const canQueue = queueState === "idle" && !busyClose && (spatialFallback
+    ? spatialFallback.controller.confirmImageOnly && (draft.state === "saved" || annotation.saved_revision === null)
+    : draft.state === "saved");
   const statusMessage = error || (draft.state === "failed" ? draft.error : "") || (draft.state === "conflict"
     ? "Saved annotation changed elsewhere. This draft and its original operation are retained. Reload the server revision before making a new edit." : "");
   const {width: iw, height: ih} = annotation.target.dimensions;
@@ -101,6 +106,7 @@ export function AnnotationEditor({api, draft, versionKind, onChange, onQueue, on
   }
 
   async function prepareSavedDraft(): Promise<Draft> {
+    if (liveFallback.current) throw new Error("Original 3D proxy is unavailable. Use the image-only fallback instead.");
     if (saveLatch.current || queueInFlight.current || discard.discardLatch.current) throw new Error("Annotation operation is already in progress");
     discard.cancel();
     // Freeze both the editable record and intrinsic canvas pixels before any await.
@@ -151,7 +157,17 @@ export function AnnotationEditor({api, draft, versionKind, onChange, onQueue, on
     } finally {saveLatch.current = false; if (mounted.current) setSaving(false);}
   }
 
-  const prepare = async () => structuredClone(annotationContext((await prepareSavedDraft()).annotation, versionKind));
+  const prepare = async () => {
+    const fallback = liveFallback.current;
+    if (fallback) {
+      if (saveLatch.current || queueInFlight.current || discard.discardLatch.current) throw new Error("Annotation operation is already in progress");
+      return fallback.controller.prepareImageOnly();
+    }
+    const saved = await prepareSavedDraft();
+    // Revocation can arrive while a normal save awaits its acknowledgement.
+    if (liveFallback.current) throw new Error("Original 3D proxy is unavailable. Confirm image-only fallback in Review before sending.");
+    return structuredClone(annotationContext(saved.annotation, versionKind));
+  };
   const prepareRef = useRef<ContextPreparer>(prepare);
   prepareRef.current = prepare;
   useLayoutEffect(() => {
@@ -163,12 +179,17 @@ export function AnnotationEditor({api, draft, versionKind, onChange, onQueue, on
   async function save() {try {await prepareSavedDraft();} catch { /* The failed outbox and visible error are retained. */ }}
 
   async function queue() {
-    if (queueLatch.current || saveLatch.current || discard.discardLatch.current) return;
+    if (!canQueue || queueLatch.current || saveLatch.current || discard.discardLatch.current) return;
     discard.cancel();
     const snapshot = structuredClone(live.current.annotation);
     queueLatch.current = true; setQueueState("submitting");
     queueInFlight.current = true;
-    try {await onQueue(snapshot.text || "Apply this annotated feedback.", annotationContext(snapshot, versionKind)); setQueueState("submitted");}
+    try {
+      const fallback = liveFallback.current;
+      const context = fallback ? await fallback.controller.prepareImageOnly() : annotationContext(snapshot, versionKind);
+      await onQueue(context.annotations[0]?.text || "Apply this annotated feedback.", context);
+      setQueueState("submitted");
+    }
     catch (e) {setError(String(e)); queueLatch.current = false; setQueueState("idle");}
     finally {queueInFlight.current = false;}
   }
@@ -194,10 +215,11 @@ export function AnnotationEditor({api, draft, versionKind, onChange, onQueue, on
       </svg>
     </div>
     <div className="annotation-dock">
+      {spatialFallback && <SpatialFallbackNotice annotation={annotation} reason={spatialFallback.reason} controller={spatialFallback.controller} inline disabled={busyClose}/>}
       <div className="annotation-feedback"><label className="sr-only" htmlFor="annotation-feedback">Feedback</label><textarea id="annotation-feedback" aria-label="Feedback" placeholder="Describe the change for Copilot on this pinned frame…" disabled={busy} value={annotation.text} onChange={e => edit({...annotation, text: e.target.value})} onKeyDown={e => handleSubmitEnter(e, () => {
         if (busyClose) return;
-        if (draft.state === "saved" && queueState === "idle") void queue();
-        else if (draft.state !== "saving" && draft.state !== "conflict") void save();
+        if (canQueue) void queue();
+        else if (!spatialFallback && draft.state !== "saving" && draft.state !== "conflict") void save();
       })}/></div>
       <div className="review-bar review-transport-bar">
         <div className="toolbar-group annotation-dock-target">
@@ -209,8 +231,8 @@ export function AnnotationEditor({api, draft, versionKind, onChange, onQueue, on
           </div>}
         </div>
         <AnnotationDockActions discard={discard} onDiscard={onDiscard} onClose={onClose} busy={busy}>
-          <button className="toolbar-btn" disabled={busyClose || draft.state === "saving" || draft.state === "conflict"} onClick={() => void save()}>{draft.operation && draft.state !== "saved" ? "Retry original save" : "Save annotation"}</button>
-          <button className="toolbar-btn toolbar-btn-accent" disabled={busyClose || draft.state !== "saved" || queueState !== "idle"} onClick={() => void queue()}>{queueState === "submitted" ? "Feedback queued" : queueState === "submitting" ? "Submitting feedback" : "Queue feedback"}</button>
+          {!spatialFallback && <button className="toolbar-btn" disabled={busyClose || draft.state === "saving" || draft.state === "conflict"} onClick={() => void save()}>{draft.operation && draft.state !== "saved" ? "Retry original save" : "Save annotation"}</button>}
+          <button className="toolbar-btn toolbar-btn-accent" disabled={!canQueue} onClick={() => void queue()}>{queueState === "submitted" ? "Feedback queued" : queueState === "submitting" ? "Submitting feedback" : spatialFallback ? "Queue image-only feedback" : "Queue feedback"}</button>
         </AnnotationDockActions>
       </div>
     </div>

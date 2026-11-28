@@ -1,6 +1,7 @@
 """Offline regression tests for model-facing schemas and tool validation errors."""
 
 import asyncio
+import copy
 import json
 from functools import partial
 from types import SimpleNamespace
@@ -873,6 +874,60 @@ def test_checkpoint_dependent_required_round_trip(tools):
         "exclude_paths",
         "Field exclude_paths requires base_version, entry_path",
     )
+
+
+def test_composition_projects_to_portable_model_schemas(tools, tool_samples):
+    ref = {"item_id": "hero", "version_id": "hero-v3"}
+    checkpoint = dict(
+        schema_version="1.0",
+        operation_id="compose-one",
+        project_id="project-one",
+        paths=["scene.blend"],
+        message="Save",
+        expected_head=None,
+        include_sources=[ref],
+    )
+    portable = tool_schema("CheckpointRequest")
+    assert Draft202012Validator(portable).is_valid(checkpoint)
+    assert "'include_sources' requires entry_path." in portable["description"]
+    _, result = failure(tools, "checkpoint_sources", checkpoint)
+    assert_issue(
+        result, "dependentRequired", "include_sources", "Field include_sources requires entry_path"
+    )
+    checkpoint["entry_path"] = "scene.blend"
+    assert validate("CheckpointRequest", checkpoint) == checkpoint
+    assert portable["properties"]["include_sources"]["items"]["required"] == [
+        "item_id",
+        "version_id",
+    ]
+
+    body = copy.deepcopy(tool_samples["publish_outputs"])
+    item = body["items"][0]
+    del item["checkpoint_operation_id"]
+    source = item["source"] = dict(
+        entry_path="scene.blend",
+        dependencies=[ref],
+        included_sources=[ref],
+        required_runtime=dict(application="blender", version="4.5", features=[]),
+        digest="a" * 64,
+        files=[
+            dict(
+                destination="scene.blend",
+                origin=dict(
+                    kind="git",
+                    path="scene.blend",
+                    repository_id="repository-one",
+                    commit="a" * 40,
+                    sha256="b" * 64,
+                ),
+            )
+        ],
+    )
+    assert validate("PublicationSubmit", body) == body
+    assert Draft202012Validator(tool_schema("PublicationSubmit")).is_valid(body)
+    source["included_sources"] = []
+    with pytest.raises(DomainError):
+        validate("PublicationSubmit", body)
 
 
 def test_normative_const_guidance_round_trip(tools, preview):

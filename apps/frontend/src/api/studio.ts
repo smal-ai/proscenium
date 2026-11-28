@@ -72,6 +72,27 @@ export interface CatalogueSurfaceProps {
   onSelect: (version: VersionRecord) => void;
 }
 
+export interface StoryboardSurfaceProps extends ReviewSurfaceProps {
+  externalTarget?: { versionId: string; shotId: string; nonce: string };
+}
+
+export interface OutlinerSurfaceProps {
+  api: ApiClient;
+  projectId: string;
+  version: VersionRecord | null;
+  items: ItemRecord[];
+  retainedArtifacts: RetainedArtifactSummary[];
+  retainedArtifactReadOrder: number;
+  selectionRevision: number;
+  hydrated: boolean;
+  visible: boolean;
+  topologyRevision: number;
+  connection: string;
+  onOpenVersion: (version: VersionRecord) => void;
+  onOpenShot: (version: VersionRecord, shotId: string) => void;
+  onInspectArtifact: (artifact: Artifact) => void;
+}
+
 export interface CriticSurfaceProps {
   api: ApiClient;
   projectId: string;
@@ -90,8 +111,8 @@ export interface CriticSurfaceProps {
 export interface StudioComponents {
   assistantStatus?: ComponentType<AssistantStatusProps>;
   review?: ComponentType<ReviewSurfaceProps>;
-  outliner?: ComponentType<ReviewSurfaceProps>;
+  outliner?: ComponentType<OutlinerSurfaceProps>;
   catalogue?: ComponentType<CatalogueSurfaceProps>;
-  storyboards?: ComponentType<ReviewSurfaceProps>;
+  storyboards?: ComponentType<StoryboardSurfaceProps>;
   critic?: ComponentType<CriticSurfaceProps>;
 }

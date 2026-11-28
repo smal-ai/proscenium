@@ -2,6 +2,11 @@
   padding: 6px 12px;
 }
 
+.annotation-dock .spatial-fallback-inline {
+  position: static;
+  margin: 6px 12px 0;
+}
+
 .review-workspace .annotation-dock .annotation-feedback textarea {
   box-sizing: border-box;
   min-height: 44px;

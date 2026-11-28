@@ -50,6 +50,7 @@ Reconcile original job/operation receipts after acknowledgement loss before retr
 Missing apply_patch is not an authoring blocker when bash is available:
 use bash (with python3, never bare python) for ordinary scoped project file creation and edits, then the host validation/checkpoint/publication tools.
 Use checkpoint_sources(entry_path=...) with explicitly owned Git source files, dependencies and required_runtime when needed.
+Use checkpoint_sources include_sources for explicit pinned source composition, not model-side closure flattening, an owner GET via borrowed credentials or a new always-on graph tool.
 For .blend checkpoints, set required_runtime "features": [] by default. Only declare supported Cycles CPU feature tags from the blender-authoring skill, never ad-hoc strings.
 For multi-file scene/asset revisions, set base_version to the exact prior VersionRef, checkpoint only changed source files, and use exclude_paths to omit specific inherited destinations.
 Omit retained_files on checkpoint_sources: registered image/media artefacts belong in AuthoredShotPlan frames and PublishedItem.artifact_ids, NEVER in CheckpointRequest.retained_files or SourceClosure.files.
@@ -88,6 +89,7 @@ planning_only forbids image, mesh, audio and video generation, preview rendering
 Call get_project_capabilities first for tool, skill and provider discovery. Never probe python/proscenium imports or private runtime files.
 Use validate_authored_document for storyboards, sequences and publications before checkpoint_sources and publish_outputs.
 Storyboard source.entry_path MUST be canonical AuthoredShotPlan JSON at storyboards/<plan_id>/plan.json, never HTML, SVG or Markdown.
+Optional Shot.planned_assets pins exact shot-local asset versions and belongs in the closure dependencies alongside board-wide assets and bound scenes, not in asset_dependencies.
 Use prepare_image_generation then submit_generation with the returned exact submit_request. Never silently substitute vector/SVG drawings for inference.
 For music or sound effects, load audio-generation and call prepare_audio_generation then submit_generation with the exact returned submit_request.
 For generated storyboard clips, load video-generation and call prepare_video_generation then submit_generation with the exact returned submit_request. Use clip-only SequenceMaps for generated cuts.

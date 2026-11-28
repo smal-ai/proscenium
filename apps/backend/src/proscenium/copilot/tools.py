@@ -19,14 +19,20 @@ from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.catalogue.schema_paths import SchemaPathScope
 from proscenium.catalogue.validation import (
+    safe_pin_diagnostics,
     safe_schema_guidance,
     safe_schema_path,
     schema_issues,
     schema_issues_for_schema,
 )
 from proscenium.contracts import SCHEMA, canonical, validate
-from proscenium.guidance import reviewed_reason
+from proscenium.guidance import (
+    INCLUDED_RETAINED_SOURCE_MISSING,
+    RETAINED_SOURCE_RECOVERY,
+    reviewed_reason,
+)
 from proscenium.services import Services
+from proscenium.sources.composition import closure_path
 
 from .outcomes import get_tool_outcome, record_tool_outcome
 from .state import State, key
@@ -256,7 +262,7 @@ def read_arguments(name: str, arguments: Any) -> dict[str, Any]:
 
 ERROR_GUIDANCE = {
     "corrupt_provider_output": "The provider returned a corrupted raster image or invalid audio/video. Inspect the failed job record; you may submit a corrected generation within the remaining task budget.",
-    "retained_source_missing": "Registered image/media artefacts belong in AuthoredShotPlan frames and PublishedItem.artifact_ids, NOT in CheckpointRequest.retained_files or SourceClosure.files. Omit retained_files on checkpoint_sources (no commit was created) and retry with a fresh operation_id.",
+    "retained_source_missing": RETAINED_SOURCE_RECOVERY,
     "scope_denied": "The requested resource or target is outside the active request scope. Check the active project and pinned request target before retrying.",
     "provider_unavailable": "The configured provider is unavailable. Read get_project_capabilities without starting, replacing or changing the service.",
     "capability_unavailable": "The requested capability is unavailable. Check the installed adapter/profile; do not install or repeatedly resubmit a substitute.",
@@ -265,6 +271,7 @@ ERROR_GUIDANCE = {
     "frame_conflict": "The frame or its dimensions do not match the registered artefact. Check the original frame receipt before retrying.",
     "unsupported_media_type": "This operation does not support the supplied media type. Check the supported formats before retrying.",
     "dependency_missing": "A pinned source dependency is missing. Check the published source closure and dependency versions.",
+    "dependency_collision": "Source destinations conflict. Change the owned path or publish a non-conflicting library before retrying.",
     "idempotency_conflict": "This operation ID already binds different input or invocation authority. Inspect its original receipt; do not blindly repeat the effect.",
     "revision_conflict": "The record revision changed. Read the current record before submitting a corrected command.",
     "project_busy": "Execution is held or the project is unsettled. Reconcile the existing work and wait for explicit owner Resume.",
@@ -339,13 +346,48 @@ def tool_failure(error: DomainError, name: str) -> ToolResult:
                 and safe_schema_guidance(issue["code"], issue["message"])
                 and safe_schema_path(issue["path"], schemas, scope=scope)
             ):
-                safe.append(issue)
+                safe.append({key: issue[key] for key in ("phase", "code", "path", "message")})
         if safe:
             details["issues"] = safe
+    pin_diagnostic = (
+        name in {"publish_outputs", "validate_authored_document"}
+        and safe_message
+        and error.code in {"dependency_missing", "invalid_request"}
+    )
+    if pin_diagnostic:
+        schemas, scope = _tool_issue_schemas(name)
+        details.update(safe_pin_diagnostics(error, schemas, scope=scope))
+    if name in {
+        "checkpoint_sources",
+        "publish_outputs",
+        "validate_authored_document",
+    } and error.code in {"dependency_collision", "dependency_missing"}:
+        if error.safe_for_model and safe_message:
+            schemas, scope = _tool_issue_schemas(name)
+            details.update(safe_pin_diagnostics(error, schemas, scope=scope))
+            refs = error.details.get("conflicting_references")
+            if error.code == "dependency_collision" and isinstance(refs, list) and len(refs) == 2:
+                try:
+                    details["conflicting_references"] = [
+                        validate("VersionRef", ref) for ref in refs
+                    ]
+                except DomainError:
+                    pass
+        destination = error.details.get("destination")
+        if (
+            isinstance(destination, str)
+            and len(destination) <= 512
+            and re.fullmatch(r"[A-Za-z0-9._ /-]+", destination)
+        ):
+            try:
+                closure_path(destination)
+                details["destination"] = destination
+            except DomainError:
+                pass
     if name == "get_unity_result" and error.code == "project_busy" and not safe_message:
         message = "This Unity job has no finished observed result. Read get_job and reconcile the original job; do not launch another."
     revision = error.details.get("current_revision")
-    if type(revision) is int and revision >= 0:
+    if not pin_diagnostic and type(revision) is int and revision >= 0:
         details["current_revision"] = revision
     if name == "request_preview" and error.code in {"capability_unavailable", "invalid_request"}:
         # Public supported recipe, not private executable paths/configuration/MCP data.
@@ -356,6 +398,19 @@ def tool_failure(error: DomainError, name: str) -> ToolResult:
             dimensions="positive exact PNG dimensions for keyframes; even width and height for H.264 motion",
             samples="explicit positive sample count",
         )
+    if error.code == "retained_source_missing" and reviewed in {
+        INCLUDED_RETAINED_SOURCE_MISSING,
+        RETAINED_SOURCE_RECOVERY,
+    }:
+        details = {}
+        for key, schema in (("destination", "RelativePath"), ("reference", "VersionRef")):
+            try:
+                value = validate(schema, error.details.get(key))
+                if key == "destination":
+                    closure_path(value)
+                details[key] = value
+            except DomainError:
+                pass
     return ToolResult(
         text_result_for_llm=canonical(
             {
@@ -388,7 +443,15 @@ def result_text(name: str, result: dict[str, Any]) -> str:
     if isinstance(closure, dict):
         ordered_closure = {
             key: closure[key]
-            for key in ("digest", "entry_path", "dependencies", "required_runtime", "files")
+            for key in (
+                "digest",
+                "entry_path",
+                "included_sources",
+                "dependencies",
+                "required_runtime",
+                "files",
+            )
+            if key in closure
         }
         if len(canonical({**header, "source_closure": {"digest": closure["digest"]}})) > 512:
             # Maximum-length IDs and SHA-256 commits cannot all fit before the digest.

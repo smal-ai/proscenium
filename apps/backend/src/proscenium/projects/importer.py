@@ -2,6 +2,7 @@
 
 import io
 import json
+import stat
 import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager, nullcontext
@@ -15,6 +16,10 @@ from proscenium.api.errors import DomainError
 from proscenium.auth import Caller
 from proscenium.catalogue import validation
 from proscenium.catalogue.artifacts import Artifacts
+from proscenium.catalogue.relationship_projector import (
+    apply_version_projection,
+    project_version_relationships,
+)
 from proscenium.catalogue.service import METADATA, Catalogue
 from proscenium.contracts import canonical, validate
 from proscenium.db import Transaction
@@ -26,8 +31,10 @@ from proscenium.previews.media import encode, inspect_video, verify_video
 from proscenium.previews.service import PreviewService
 from proscenium.reviews.references import References
 from proscenium.services import Services
-from proscenium.sources import Sources, closure_digest
+from proscenium.sources import Sources, closure_digest, composition
 from proscenium.sources.common import atomic_bytes, fingerprint, git, managed, relative, replay, sha
+from proscenium.sources.composition import ref_key, verify_included_sources
+from proscenium.sources.resolver import checked_file
 
 from .service import Projects, owner_only
 
@@ -78,6 +85,12 @@ class PreparedJob:
     assembly: dict | None = None
 
 
+@dataclass
+class PendingSourceRefs:
+    commands: list[str] = field(default_factory=list)
+    initial_index: str | None = None
+
+
 class Import:
     def __init__(self, services: Services, caller: Caller, project: dict, manifest: dict):
         self.services, self.caller, self.manifest = services, caller, manifest
@@ -119,8 +132,25 @@ class Import:
     def source_origin(self, commit: str, entry: dict) -> dict:
         return dict(kind="git", repository_id=self.repository_id, commit=commit, **entry)
 
-    def checkpoint(self, files: dict[str, str]) -> str:
-        """Use the native isolated-index writer, pinning a private ref without moving HEAD."""
+    def sealed_closure(self, source: dict, commit: str) -> dict:
+        closure = dict(
+            entry_path=source["entry_path"],
+            files=[
+                dict(destination=entry["path"], origin=self.source_origin(commit, entry))
+                for entry in sorted(source["files"], key=lambda row: row["path"])
+            ],
+            dependencies=source.get("dependencies", []),
+            required_runtime=source["required_runtime"],
+        )
+        if "included_sources" in source:
+            closure["included_sources"] = source["included_sources"]
+        closure["digest"] = closure_digest(closure)
+        return closure
+
+    def prepare_checkpoint(
+        self, files: dict[str, str], *, stream_limits: dict[str, int] | None
+    ) -> tuple[str, PendingSourceRefs]:
+        """Prepare verified objects and defer ref installation until admission passes."""
         key = identity("import-checkpoint", self.operation)
         reference = f"refs/proscenium/checkpoints/{key}"
         current = (
@@ -137,8 +167,13 @@ class Import:
             modes={},
         )
         if not current:
+            if stream_limits is not None:
+                for name in files.keys() - stream_limits.keys():
+                    stream_limits[name] = self.working_size(name)
+                intent["stream_limits"] = stream_limits
             for entry in rows:
-                self.read_verified(entry)
+                if stream_limits is None:
+                    self.read_verified(entry)
                 path = relative(self.root, entry["path"], exists=True)
                 if git(
                     self.root, "check-ignore", "--no-index", "--", entry["path"], required=False
@@ -156,16 +191,13 @@ class Import:
             if not head:
                 branch = git(self.root, "symbolic-ref", "HEAD").decode().strip()
                 commands.append(f"create {branch} {commit}")
-            git(self.root, "update-ref", "--stdin", data=("\n".join(commands) + "\n").encode())
-            if not head and not (self.root / ".git/index").exists():
-                git(self.root, "read-tree", commit)
-            return commit
+            return commit, PendingSourceRefs(commands, initial_index=commit if not head else None)
         message = git(self.root, "show", "-s", "--format=%B", current).decode().splitlines()
         if f"Proscenium-Fingerprint: {intent['fingerprint']}" not in message:
             raise DomainError("idempotency_conflict", 409)
-        return current
+        return current, PendingSourceRefs()
 
-    def sources_for_items(self, items: list[dict]) -> None:
+    def sources_for_items(self, items: list[dict]) -> PendingSourceRefs:
         checkpoint_files: dict[str, str] = {}
         for item in items:
             fields(
@@ -174,7 +206,11 @@ class Import:
                 "description tags provenance derived_from unity artifacts renders delivery expected_current_version_id",
             )
             source = item["source"]
-            fields(source, "entry_path files required_runtime", "source_commit dependencies")
+            fields(
+                source,
+                "entry_path files required_runtime",
+                "source_commit dependencies included_sources",
+            )
             files = array(source["files"])
             names = set()
             for entry in files:
@@ -186,22 +222,36 @@ class Import:
                 if path in names or path.split("/")[0] == ".receipt.json":
                     raise DomainError("dependency_collision", 409, path=path)
                 names.add(path)
-                if "source_commit" not in source:
-                    if checkpoint_files.setdefault(path, digest) != digest:
-                        raise DomainError("hash_mismatch", 422, path=path)
             if source["entry_path"] not in names:
                 raise DomainError("dependency_missing", 422, "Source entry must be listed in files")
+        stream_limits = self.check_inclusion_representation(items)
+        for item in items:
+            if "source_commit" not in item["source"]:
+                for entry in item["source"]["files"]:
+                    path, digest = entry["path"], entry["sha256"]
+                    if checkpoint_files.setdefault(path, digest) != digest:
+                        raise DomainError("hash_mismatch", 422, path=path)
         if (
             checkpoint_files
             or not git(self.root, "rev-parse", "--verify", "HEAD", required=False).strip()
         ):
             for name in ("project.json", ".gitignore", ".gitattributes"):
-                digest = sha(relative(self.root, name, exists=True).read_bytes())
+                path = relative(self.root, name, exists=True)
+                if stream_limits is None:
+                    digest = sha(path.read_bytes())
+                else:
+                    if name not in stream_limits:
+                        stream_limits[name] = self.working_size(name)
+                    limit = stream_limits[name]
+                    digest = checked_file(path, limit, None)[1].decode()
                 if checkpoint_files.setdefault(name, digest) != digest:
                     raise DomainError("hash_mismatch", 422, path=name)
-            checkpoint = self.checkpoint(checkpoint_files)
+            checkpoint, pending = self.prepare_checkpoint(
+                checkpoint_files, stream_limits=stream_limits
+            )
         else:
             checkpoint = None
+            pending = PendingSourceRefs()
 
         pinned: set[str] = set()
         verified: set[tuple[str, str, str]] = set()
@@ -214,32 +264,29 @@ class Import:
                 if git(self.root, "cat-file", "-t", commit).strip() != b"commit":
                     raise DomainError("source_unavailable", 422)
                 pinned.add(commit)
-            files = []
             kind = item["kind"]
-            for entry in sorted(source["files"], key=lambda row: row["path"]):
-                path = entry["path"]
-                origin = self.source_origin(commit, entry)
+            closure = self.sealed_closure(source, commit)
+            for entry in closure["files"]:
+                path, origin = entry["destination"], entry["origin"]
                 is_document = path == source["entry_path"] and kind in {"storyboard", "sequence"}
-                key = (commit, path, entry["sha256"])
-                if key not in verified or is_document:
-                    data = self.sources.git_bytes(self.project_id, origin)
+                key = (commit, path, origin["sha256"])
+                if "included_sources" not in source and (key not in verified or is_document):
+                    if stream_limits is not None:
+                        _, limit, _, _ = self.sources.git_source_metadata(
+                            self.project_id, self.root, origin
+                        )
+                        _, data = self.sources.bounded_origin(
+                            self.project_id,
+                            self.root,
+                            origin,
+                            limit,
+                            collect=is_document,
+                        )
+                    else:
+                        data = self.sources.git_bytes(self.project_id, origin)
                     verified.add(key)
                     if is_document:
-                        document = json.loads(data)
-                        validate(
-                            "AuthoredShotPlan" if kind == "storyboard" else "SequenceMap", document
-                        )
-                        if kind == "sequence":
-                            self.validate_sequence_bounds(document)
-                        self.documents[item["version_id"]] = document
-                files.append(dict(destination=path, origin=origin))
-            closure = dict(
-                entry_path=source["entry_path"],
-                files=files,
-                dependencies=source.get("dependencies", []),
-                required_runtime=source["required_runtime"],
-            )
-            closure["digest"] = closure_digest(closure)
+                        self.authored_source(item, data)
             row = {
                 key: item[key]
                 for key in ("kind", "name", "derived_from", "unity", *METADATA)
@@ -263,9 +310,150 @@ class Import:
                     "invalid_request", 422, "Media declaration does not match item kind"
                 )
             self.rows.append(row)
+        batch = {row["version_id"]: {**row, "project_id": self.project_id} for row in self.rows}
+        for row in self.rows:
+            if "included_sources" in row["source"]:
+                is_document = row["kind"] in {"storyboard", "sequence"}
+                _, hydrated = self.sources.verify_composed(
+                    self.project_id,
+                    row["source"],
+                    batch=batch,
+                    store=self.store,
+                    collect=is_document,
+                    entry_only=True,
+                    source_commit=row["source_commit"],
+                )
+                if is_document:
+                    self.authored_source(row, hydrated[row["source"]["entry_path"]])
         # Retain exact externally committed source even if the owner's branch later moves.
         for commit in sorted(pinned - {checkpoint}):
-            git(self.root, "update-ref", f"refs/proscenium/import-sources/{commit}", commit)
+            pending.commands.append(f"update refs/proscenium/import-sources/{commit} {commit}")
+        return pending
+
+    def install_source_refs(self, pending: PendingSourceRefs) -> None:
+        if pending.commands:
+            commands = "\n".join(["start", *pending.commands, "prepare", "commit", ""])
+            git(self.root, "update-ref", "--stdin", data=commands.encode())
+        if pending.initial_index is not None and not (self.root / ".git/index").exists():
+            git(self.root, "read-tree", pending.initial_index)
+
+    def authored_source(self, item: dict, data: bytes) -> None:
+        document = json.loads(data)
+        kind = item["kind"]
+        validate("AuthoredShotPlan" if kind == "storyboard" else "SequenceMap", document)
+        if kind == "sequence":
+            self.validate_sequence_bounds(document)
+        self.documents[item["version_id"]] = document
+
+    def working_size(self, path: str) -> int:
+        info = relative(self.root, path, exists=True).stat()
+        if not stat.S_ISREG(info.st_mode):
+            raise DomainError("source_unavailable", 422)
+        return info.st_size
+
+    def check_inclusion_representation(self, items: list[dict]) -> dict[str, int] | None:
+        """Admit each composed closure before hydration and freeze its working-file sizes."""
+        if not any("included_sources" in item["source"] for item in items):
+            return None
+        batch = {item["version_id"]: item for item in items}
+        if len(batch) != len(items):
+            raise DomainError("invalid_request", 422, "Import must use unique version IDs")
+        # All rows without an explicit commit will share the same new import
+        # checkpoint. A symbolic placeholder lets the shared verifier compare
+        # full rows before that checkpoint or any source ref exists.
+        pending_commit = "0" * 40
+        checkpoint_ref = (
+            f"refs/proscenium/checkpoints/{identity('import-checkpoint', self.operation)}"
+        )
+        existing_commit = (
+            git(self.root, "rev-parse", "--verify", checkpoint_ref, required=False).decode().strip()
+        )
+        prepared = {}
+        for version_id, item in batch.items():
+            validate("VersionRef", ref(item))
+            commit = item["source"].get("source_commit", pending_commit)
+            validate("Commit", commit)
+            if "source_commit" in item["source"] and commit == pending_commit:
+                raise DomainError("source_unavailable", 422)
+            prepared[version_id] = dict(
+                **ref(item),
+                project_id=self.project_id,
+                source_commit=commit,
+                source=self.sealed_closure(item["source"], commit),
+            )
+        size_cache: dict[tuple[str, str], int] = {}
+        working_sizes: dict[str, int] = {}
+        commits: set[str] = set()
+        with self.store.transaction(write=False) as tx:
+
+            def lookup(pin: dict) -> dict | None:
+                return prepared.get(pin["version_id"]) or tx.get(
+                    "versions", pin["version_id"], required=False
+                )
+
+            for item in items:
+                source = item["source"]
+                if "included_sources" not in source:
+                    continue
+                commit = source.get("source_commit")
+                for pin in array(source["included_sources"]):
+                    validate("VersionRef", pin)
+                    staged = batch.get(pin["version_id"])
+                    if staged is not None:
+                        if ref_key(staged) != ref_key(pin):
+                            raise DomainError("scope_denied", 403)
+                        representable = staged["source"].get("source_commit") == commit
+                    else:
+                        producer = lookup(pin)
+                        if producer is None:
+                            continue  # Report the missing ref through the shared verifier.
+                        if producer.get("project_id") != self.project_id or ref_key(
+                            producer
+                        ) != ref_key(pin):
+                            raise DomainError("scope_denied", 403)
+                        representable = all(
+                            row["origin"]["kind"] == "git"
+                            and row["origin"]["commit"] == commit
+                            and row["origin"]["path"] == row["destination"]
+                            for row in producer["source"]["files"]
+                        )
+                    if not representable:
+                        raise DomainError(
+                            "invalid_request",
+                            422,
+                            "Offline import cannot represent multi-commit or non-Git included source origins; use backup and restore",
+                        )
+                consumer = prepared[item["version_id"]]
+                verify_included_sources(
+                    consumer["source"],
+                    lookup,
+                    self.project_id,
+                    self.repository_id,
+                    consuming_version=ref(item),
+                    source_commit=consumer["source_commit"],
+                )
+                # The representation check excludes retained origins and mandates one
+                # commit and Git path=destination, so each row is one hydrated charge.
+                remaining = composition.MAX_BYTES
+                for row in consumer["source"]["files"]:
+                    origin = row["origin"]
+                    path = origin["path"]
+                    commit = origin["commit"]
+                    if commit == pending_commit and existing_commit:
+                        commit = existing_commit
+                    key = (commit, path)
+                    if key not in size_cache:
+                        if commit == pending_commit:
+                            size = working_sizes[path] = self.working_size(path)
+                        else:
+                            _, size, _, _ = self.sources.git_source_metadata(
+                                self.project_id, self.root, {**origin, "commit": commit}, commits
+                            )
+                        size_cache[key] = size
+                    size = size_cache[key]
+                    composition.byte_bound(size, remaining)
+                    remaining -= size
+        return working_sizes
 
     def promote(self, artifact_id: str, data: bytes, **description: Any) -> dict:
         if artifact_id in self.media:
@@ -802,7 +990,7 @@ class Import:
                     raise DomainError("hash_mismatch", 422)
             self.selection_documents[version_id] = validate(schema, json.loads(data))
 
-    def commit(self, tx: Transaction, submission: dict) -> dict:
+    def commit(self, tx: Transaction, submission: dict, pending: PendingSourceRefs) -> dict:
         for artifact in self.media.values():
             self.artifacts.put(tx, artifact)
         for artifact_id, evidence in self.historical.items():
@@ -881,6 +1069,14 @@ class Import:
                     dict(work_id=None, invocation_id=None, owner_operation_id=self.operation),
                 )
         self.catalogue.validate_documents(tx, submission, self.documents, self.maps)
+        for row in self.rows:
+            version = tx.require("versions", row["version_id"])
+            apply_version_projection(
+                tx,
+                project_version_relationships(
+                    version, self.documents.get(row["version_id"]), inclusions_verified=True
+                ),
+            )
         for prepared in self.jobs.values():
             if snapshot := prepared.assembly:
                 local = {
@@ -917,6 +1113,9 @@ class Import:
                 dict(submission=submission, receipt=receipt, owner_operation_id=self.operation),
             )
             tx.emit("publication.created", receipt, actor=self.actor)
+        # All batch, document and selection checks have passed. Pin the verified
+        # objects together before SQLite publishes records referring to them.
+        self.install_source_refs(pending)
         return dict(
             project_id=self.project_id,
             import_id=self.operation,
@@ -936,7 +1135,19 @@ class Import:
         frame_maps = array(self.manifest.get("frame_maps", []))
         if not (items or historical or frame_maps or self.manifest.get("selections")):
             raise DomainError("invalid_request", 422, "Import has no records")
-        self.sources_for_items(items)
+        pending = self.sources_for_items(items)
+        submission = dict(
+            schema_version="1.0",
+            project_id=self.project_id,
+            publication_id=self.publication,
+            items=self.rows,
+        )
+        if self.rows:
+            validate("PublicationSubmit", submission)
+            with self.store.transaction(write=False) as tx:
+                # Media has not been admitted yet. The preview rows have no
+                # artefact IDs; commit repeats the checks with the final rows.
+                self.catalogue.validate_batch(tx, submission)
         for artifact in historical:
             self.item_artifact(artifact, None)
         for mapping in frame_maps:
@@ -960,18 +1171,12 @@ class Import:
                 full = self.frame_map(document)
                 if "delivery" in item:
                     self.delivery(row, item["delivery"], document, full)
-        submission = dict(
-            schema_version="1.0",
-            project_id=self.project_id,
-            publication_id=self.publication,
-            items=self.rows,
-        )
         if self.rows:
             validate("PublicationSubmit", submission)
         self.prepare_selections()
         with self.store.transaction() as tx:
             result, repeated = tx.operation(
-                SCOPE, self.operation, self.manifest, lambda: self.commit(tx, submission)
+                SCOPE, self.operation, self.manifest, lambda: self.commit(tx, submission, pending)
             )
         return {**result, "replayed": repeated}
 
